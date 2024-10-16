@@ -8,6 +8,7 @@ syscall(int num, uint32 a1, uint32 a2, uint32 a3, uint32 a4, uint32 a5)
 {
 	uint32 ret;
 	// menna comment
+	//mariam comment
 
 	// Generic system call: pass system call number in AX,
 	// up to five parameters in DX, CX, BX, DI, SI.
