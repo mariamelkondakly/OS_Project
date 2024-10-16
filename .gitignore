@@ -3,6 +3,7 @@
 
 .bochsrc
 .bochsrc-debug
+.gdbinit
 
 
 # Ignore compiled object files and binaries
