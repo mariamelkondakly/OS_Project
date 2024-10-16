@@ -1,0 +1,47 @@
+# Ignore log files
+*.log
+
+# Ignore compiled object files and binaries
+obj/
+
+# Ignore IDE-specific files (Eclipse, others)
+.project
+.cproject
+.settings/
+
+# Ignore batch and shell scripts
+*.bat
+*.sh
+
+# Ignore temporary or output files
+stdout
+
+# Ignore XML upgrade logs
+*.XML
+
+# Ignore miscellaneous compiled files
+*.o
+*.exe
+*.dll
+*.class
+
+# Ignore hidden system files
+.DS_Store
+Thumbs.db
+
+# Ignore backup or temporary files
+*.bak
+*.tmp
+
+# Ignore auto-generated Makefile output files
+*.d      # Dependency files
+*.o      # Object files
+*.a      # Static libraries
+*.so     # Shared libraries
+*.exe    # Executable files
+*.out    # Output files from builds
+*.log    # Log files from builds
+
+# Ignore temporary or backup Makefiles
+*~        # Backup files
+*.tmp     # Temporary files
