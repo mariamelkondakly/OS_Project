@@ -114,7 +114,7 @@ void initialize_dynamic_allocator(uint32 daStart, uint32 initSizeOfAllocatedSpac
 	struct BlockElement* block = (struct BlockElement*)(daStart + 8);
 	uint32* header = (uint32*)(daStart + 4);
 	*header = initSizeOfAllocatedSpace - 8;
-	uint32* footer = (uint32*)(daStart + initSizeOfAllocatedSpace - 4);
+	uint32* footer = (uint32*)(daStart + initSizeOfAllocatedSpace - 8);
 	*footer = initSizeOfAllocatedSpace - 8;
 
 	LIST_INIT(&freeBlocksList);
