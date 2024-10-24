@@ -267,7 +267,7 @@ void free_block(void *va)
 
 		if((is_free_block(prevVa)==0)&&(is_free_block(nextVa)==0)){
 			 newBlock =(struct BlockElement*)va; //to make the new block points to the prevVa
-			set_block_data(va,blockSize,0);
+			 set_block_data(va,blockSize,0);
 		}
 		else if((is_free_block(prevVa)==1)&&(is_free_block(nextVa)==1)){//merge
 			cprintf("when both of the prev & next is free");
@@ -308,19 +308,19 @@ void free_block(void *va)
 			set_block_data(va,totalNewBlockSize,0);
 
 		}
-	struct BlockElement* current;
-				uint32 inserted = 0;
+		struct BlockElement* current;
+		uint32 inserted = 0;
 
-				LIST_FOREACH( current , &freeBlocksList ){
-					if ( current > newBlock  ){
-						LIST_INSERT_BEFORE(&freeBlocksList, current, newBlock );
-						inserted = 1;
-						break;
-					}
-				}
-				if( inserted == 0 ){
-					LIST_INSERT_TAIL(&freeBlocksList,newBlock);
+		LIST_FOREACH( current , &freeBlocksList ){
+			if ( current > newBlock  ){
+				LIST_INSERT_BEFORE(&freeBlocksList, current, newBlock );
+				inserted = 1;
+				break;
 			}
+		}
+		if( inserted == 0 ){
+			LIST_INSERT_TAIL(&freeBlocksList,newBlock);
+		}
 	}
 
  }
@@ -332,8 +332,12 @@ void *realloc_block_FF(void* va, uint32 new_size)
 {
 	//TODO: [PROJECT'24.MS1 - #08] [3] DYNAMIC ALLOCATOR - realloc_block_FF
 	//COMMENT THE FOLLOWING LINE BEFORE START CODING
-	panic("realloc_block_FF is not implemented yet");
+//	panic("realloc_block_FF is not implemented yet");
 	//Your Code is Here...
+
+
+
+
 }
 
 /*********************************************************************************************/
