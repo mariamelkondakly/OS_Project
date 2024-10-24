@@ -111,7 +111,7 @@ void initialize_dynamic_allocator(uint32 daStart, uint32 initSizeOfAllocatedSpac
 	uint32* END = (uint32*)(daStart + initSizeOfAllocatedSpace - 4);
 	*END = 1;
 
-	struct BlockElement* block = (struct BlockElement*)(daStart + 8);
+	struct BlockElement* block = (struct BlockElement*)(daStart + 8);//points to va
 	uint32* header = (uint32*)(daStart + 4);
 	*header = initSizeOfAllocatedSpace - 8;
 	uint32* footer = (uint32*)(daStart + initSizeOfAllocatedSpace - 8);
@@ -243,6 +243,8 @@ void free_block(void *va)
 	//COMMENT THE FOLLOWING LINE BEFORE START CODING
 	//panic("free_block is not implemented yet");
 	//Your Code is Here...
+	uint32 blockSize = get_block_size(va);
+
 	if(va==NULL){
 		return;
 	}
@@ -250,53 +252,78 @@ void free_block(void *va)
 		return;
     }
 	else{
-		struct BlockElement* free =(struct BlockElement*)va;
-		uint32* prevVa =(uint32*) free->prev_next_info.le_prev;
-		uint32* nextVa = (uint32*)free->prev_next_info.le_next;
-		cprintf("prevVa is : %d , nextVa : %d\n",prevVa,nextVa);
-		if((is_free_block(prevVa)!=0)&&(is_free_block(nextVa)!=0)){
-			cprintf("when neither of the prev & next is free\n");
-			struct BlockElement* newBlock =(struct BlockElement*)va; //to make the new block points to the prevVa
-			cprintf("new block va %x\n",newBlock);
-			struct BlockElement* prev = newBlock->prev_next_info.le_prev;//prev block of the newBlock to insert after
-			cprintf("va of prev block of the newBlock to insert after %x\n",prev);
-			if(prev!=NULL){
-				cprintf("when prev!=null:\n");
-				 LIST_INSERT_AFTER(&freeBlocksList, prev, newBlock);
-			     set_block_data(va,get_block_size(va),0);
-			}
-			else{
-				cprintf("when prev=null:\n");
-				LIST_INSERT_HEAD(&freeBlocksList, newBlock);
-				set_block_data(va,get_block_size(va),0);
-			}
+
+//		test_free_block_FF
+
+		uint32* prevFooter = (uint32*)((uint32)(va-8));
+		uint32 prevSize = *prevFooter & ~1 ;  //there's an extra bit we need to minus here!!!!!!!!!!
+		uint32* prevVa = (uint32*)((uint32)prevFooter-prevSize+8);
+
+		uint32* nextHeader = (uint32*)((uint32)(va+blockSize-4));
+		uint32* nextVa = (uint32*)((uint32)nextHeader+4);
+		uint32 nextSize = get_block_size(nextVa);
+
+		struct BlockElement* newBlock =(struct BlockElement*)va;
+
+		if((is_free_block(prevVa)==0)&&(is_free_block(nextVa)==0)){
+			 newBlock =(struct BlockElement*)va; //to make the new block points to the prevVa
+			set_block_data(va,blockSize,0);
 		}
-		else if((is_free_block(prevVa)==0)&&(is_free_block(nextVa)==0)){//merge
+		else if((is_free_block(prevVa)==1)&&(is_free_block(nextVa)==1)){//merge
 			cprintf("when both of the prev & next is free");
-		uint32 totalNewBlockSize = get_block_size(prevVa)+get_block_size(nextVa)+get_block_size(va);
-		struct BlockElement* newBlock =(struct BlockElement*)prevVa; //to make the new block points to the prevVa
-		struct BlockElement* prev = newBlock->prev_next_info.le_prev;//prev block of the newBlock to insert after
-        LIST_INSERT_AFTER(&freeBlocksList, prev, newBlock);
-		set_block_data(prevVa,totalNewBlockSize,0);
-		}
-		else if((is_free_block(prevVa)==0)){
-			cprintf("when the prev is free");
-			uint32 totalNewBlockSize =  get_block_size(prevVa)+get_block_size(va);
-			struct BlockElement* newBlock =(struct BlockElement*)prevVa;
-			struct BlockElement* prev = newBlock->prev_next_info.le_prev;//prev block of the newBlock to insert after
-			LIST_INSERT_AFTER(&freeBlocksList, prev, newBlock);
+
+			uint32 totalNewBlockSize = prevSize + nextSize + blockSize;
+
+			newBlock =(struct BlockElement*)prevVa; //to make the new block points to the prevVa
+
+			struct BlockElement* prevBlock =(struct BlockElement*)prevVa ;
+			LIST_REMOVE(&freeBlocksList,prevBlock);
+			struct BlockElement* nextBlock =(struct BlockElement*)nextVa ;//prev block of the newBlock to insert after
+			LIST_REMOVE(&freeBlocksList,nextBlock);
+
 			set_block_data(prevVa,totalNewBlockSize,0);
+
+		}
+		else if((is_free_block(prevVa)==1)){
+			cprintf("when the prev is free");
+			uint32 totalNewBlockSize =  prevSize + blockSize;
+
+		    newBlock =(struct BlockElement*)prevVa;
+
+			struct BlockElement* prevBlock =(struct BlockElement*)prevVa ;
+			LIST_REMOVE(&freeBlocksList,prevBlock);
+
+			set_block_data(prevVa,totalNewBlockSize,0);
+
 		}
 		else{
 			cprintf("when the next is free");
-			uint32 totalNewBlockSize =  get_block_size(nextVa)+get_block_size(va);
-			struct BlockElement* newBlock =(struct BlockElement*)va;
-			struct BlockElement* prev = newBlock->prev_next_info.le_prev;//prev block of the newBlock to insert after
-			LIST_INSERT_AFTER(&freeBlocksList, prev, newBlock);
+			uint32 totalNewBlockSize =  nextSize + blockSize;
+
+			newBlock =(struct BlockElement*)va;
+
+         	struct BlockElement* nextBlock =(struct BlockElement*)nextVa ;
+			LIST_REMOVE(&freeBlocksList,nextBlock);
+
 			set_block_data(va,totalNewBlockSize,0);
+
 		}
+	struct BlockElement* current;
+				uint32 inserted = 0;
+
+				LIST_FOREACH( current , &freeBlocksList ){
+					if ( current > newBlock  ){
+						LIST_INSERT_BEFORE(&freeBlocksList, current, newBlock );
+						inserted = 1;
+						break;
+					}
+				}
+				if( inserted == 0 ){
+					LIST_INSERT_TAIL(&freeBlocksList,newBlock);
+			}
 	}
-}
+
+ }
 
 //=========================================
 // [6] REALLOCATE BLOCK BY FIRST FIT:
