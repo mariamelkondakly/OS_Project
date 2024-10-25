@@ -419,7 +419,7 @@ void *realloc_block_FF(void* va, uint32 new_size)
 							//no relocate no split
 						cprintf("entered the if condition! \n \n");
 
-						if( nextSize < diffMax+16){
+						if( nextSize < diffMax+16){ //edited
 							struct BlockElement* nextBlock = (struct BlockElement*) nextVa;
 							LIST_REMOVE(&freeBlocksList, nextBlock);
 							set_block_data(va, blockOriginalSize+nextSize, 1);
@@ -431,14 +431,15 @@ void *realloc_block_FF(void* va, uint32 new_size)
 
 
 							set_block_data(va, new_size , 1);
+							//treated the free blocks as blocks not pointers and didn't use fee_block
 							struct BlockElement* nextBlock=(struct BlockElement*) nextVa;
 							struct BlockElement* splittedVa = (struct BlockElement*)((uint32)va + new_size) ;
 							LIST_INSERT_BEFORE(&freeBlocksList,nextBlock,splittedVa);
 							LIST_REMOVE(&freeBlocksList,nextBlock);
-							set_block_data(splittedVa,nextSize-diffMax,0);
+							set_block_data(splittedVa,nextSize-diffMax,0); //edited (-) instead of (+)
 							//free_block(splittedVa);
 							set_block_data(va,new_size,1);
-							return(struct BlockElement*) va;
+							return(struct BlockElement*) va; //edited return immediately
 
 						}
 						struct BlockElement* nextBlock = (struct BlockElement*) nextVa;
