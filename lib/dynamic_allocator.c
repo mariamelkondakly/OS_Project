@@ -228,8 +228,54 @@ void *alloc_block_BF(uint32 size)
 {
 	//TODO: [PROJECT'24.MS1 - BONUS] [3] DYNAMIC ALLOCATOR - alloc_block_BF
 	//COMMENT THE FOLLOWING LINE BEFORE START CODING
-	panic("alloc_block_BF is not implemented yet");
-	//Your Code is Here...
+	//panic("alloc_block_BF is not implemented yet");
+    //Your Code is Here...
+if (size == 0) {
+			cprintf("Size cant be 0");
+			return NULL;
+			}
+	uint32 total_size = size + 8; // Adjust for metadata
+	if(total_size<16)
+		total_size=16;
+
+	uint32 min_size_diff = 4294967295;
+	struct BlockElement* current;//va
+	struct BlockElement* best_block = NULL;//va
+	uint32 best_size =0;
+	LIST_FOREACH(current, &freeBlocksList) {
+		uint32 current_size=get_block_size(current);
+		if (current_size >= total_size) {
+			uint32 size_diff = (current_size - total_size);
+			if(size_diff<min_size_diff){
+			min_size_diff=size_diff;
+			best_block=current;
+			best_size=current_size;
+			}
+		}
+	}
+	if(best_block!=NULL){
+			if (min_size_diff >= 16) {
+			// Split the block
+
+			struct BlockElement* free_block = (struct BlockElement*)((uint32)best_block + total_size); // edited is this va
+			set_block_data(free_block, best_size- total_size, 0); // New block size , splitted correct
+
+			LIST_INSERT_AFTER(&freeBlocksList, best_block, free_block);
+			set_block_data(best_block,total_size , 1);
+			LIST_REMOVE(&freeBlocksList, best_block); // Remove from free list
+			return best_block;
+		}
+		else {
+			// Internal fragmentation
+			set_block_data(best_block, best_size, 1); // Just mark current block as used
+			cprintf("current size when size difference <16 : %d\n",best_size);
+			LIST_REMOVE(&freeBlocksList, best_block);
+			return best_block;
+			}
+	}
+	sbrk(total_size);
+	return NULL; // No suitable block found
+
 
 
 }

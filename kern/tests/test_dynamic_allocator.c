@@ -1562,36 +1562,7 @@ void test_realloc_block_FF_COMPLETE()
 #endif
 
 	panic("this is UNSEEN test");
-	/*int eval =0;
-	void * va, *expectedVA ;
-	uint32 actualSize, expectedSize;
-	int blockIndex, block_size, block_status, old_size, new_size, newBlockIndex;
-	cprintf("	3.3: coalesce with next \n\n") ;
-	bool is_correct = 1;
-	{// incress.... decrees
-		blockIndex = 4*allocCntPerSize - 1 ;
-		new_size = allocSizes[3]  - allocSizes[3]/2  - sizeOfMetaData;
-		expectedSize = ROUNDUP(new_size + sizeOfMetaData, 2);
-		expectedVA = startVAs[blockIndex];
 
-		va = realloc_block_FF(startVAs[blockIndex], new_size);
-
-		//check return address
-		if (check_block(va, expectedVA, expectedSize, 1) == 0)
-		{
-			is_correct = 0;
-			cprintf("  made by us  test_realloc_block_FF #3.1.1:  Failed\n    ");
-		}
-		//check content of reallocated block
-		if (*(startVAs[blockIndex]) != blockIndex || *(midVAs[blockIndex]) != blockIndex ||	*(endVAs[blockIndex]) != blockIndex)
-		{
-			is_correct = 0;
-			cprintf("test_realloc_block_FF #3.1.2: WRONG REALLOC! content of the block is not correct. Expected %d\n", blockIndex);
-		}
-	    }
-	    if (is_correct)
-	    {
-		     eval += 25;}*/
 
 
 
