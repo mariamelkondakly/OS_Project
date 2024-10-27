@@ -335,137 +335,127 @@ void *realloc_block_FF(void* va, uint32 new_size)
 //	panic("realloc_block_FF is not implemented yet");
 	//Your Code is Here...
 	//comment here
-	if(new_size == 0){
-				free_block(va);
-				return NULL;
-			}
-			else if(va == NULL){
-				return alloc_block_FF(new_size);
-		    }
-			else if(va == NULL && new_size == 0){
-				return NULL;
-			}
-			else{
-				new_size+=8;
-				cprintf("block size i want to get %d \n" , new_size) ;
+if(new_size == 0){
+	free_block(va);
+    return NULL;
+	}
+  else if(va == NULL){
+	   return alloc_block_FF(new_size);
+		   }
+  else if(va == NULL && new_size == 0){
+	    return NULL;
+		   }
+  else if( new_size < 8){
+  	    return NULL;
+  		   }
 
-				cprintf("block add i got %p \n" , va) ;
+  else{
+	new_size+=8;//for meta data H+F
+	cprintf("block size i want to get %d \n" , new_size) ;
+	cprintf("block add i got %p \n" , va) ;
 
-				uint32 blockOriginalSize = get_block_size(va);
-				int diffMin = blockOriginalSize - new_size; // new_size smaller than original
-				int diffMax = new_size - blockOriginalSize; // Original smaller than new_size
+	uint32 blockOriginalSize = get_block_size(va);
+	int diffMin = blockOriginalSize - new_size; // new_size smaller than original
+	int diffMax = new_size - blockOriginalSize; // Original smaller than new_size
 
-				cprintf("block size before (original block size) %d \n" , get_block_size(va) );
-				cprintf("expected block size  %d \n" , new_size );
-				cprintf("diffMin size  %d \n" , diffMin );
-				cprintf("diffMax size  %d \n" , diffMax );
-
-
-				uint32* nextHeader = (uint32*)((uint32)(va+blockOriginalSize-4));
-				uint32* nextVa = (uint32*)((uint32)nextHeader+4);
-				uint32 nextSize = get_block_size(nextVa);
+	cprintf("block size before (original block size) %d \n" , get_block_size(va) );
+	cprintf("expected block size  %d \n" , new_size );
+	cprintf("diffMin size  %d \n" , diffMin );
+	cprintf("diffMax size  %d \n" , diffMax );
 
 
+	uint32* nextHeader = (uint32*)((uint32)(va+blockOriginalSize-4));
+	uint32* nextVa = (uint32*)((uint32)nextHeader+4);
+	uint32 nextSize = get_block_size(nextVa);
 
-				struct BlockElement* returnBlock;
+if(blockOriginalSize > new_size ){  // minimize block
 
+		if( is_free_block(nextVa) == 1 ){
 
-				if(blockOriginalSize > new_size ){  // minimize block
-
-						if( is_free_block(nextVa) == 1 ){
-
-//						uint32* splittedVa = va;
-//						va = va + diffMin;
-						struct BlockElement* nextBlock=(struct BlockElement*) nextVa;
-						struct BlockElement* splittedVa = (struct BlockElement*)((uint32)va + new_size) ;
-						LIST_INSERT_BEFORE(&freeBlocksList,nextBlock,splittedVa);
-						LIST_REMOVE(&freeBlocksList,nextBlock);
-						set_block_data(splittedVa,diffMin+nextSize,0);
-						//free_block(splittedVa);
-						set_block_data(va,new_size,1);
-						returnBlock = va;
-
-					}
-					else if(is_free_block(nextVa) == 0){    // is_free_block(nextVa) == 1  && no space around it is free ( check size for compaction )
-						if(diffMin<16){
-						return va;
-						}
-						struct BlockElement* splittedVa = (struct BlockElement*)((uint32)va + new_size) ;
-
-						struct BlockElement* current;
-								uint32 inserted = 0;
-
-								LIST_FOREACH( current , &freeBlocksList ){
-									if ( current > splittedVa  ){
-										LIST_INSERT_BEFORE(&freeBlocksList, current, splittedVa );
-										inserted = 1;
-										break;
-									}
-								}
-								if( inserted == 0 ){
-									LIST_INSERT_TAIL(&freeBlocksList,splittedVa);
-								}
-						//free_block(splittedVa);
-						set_block_data(splittedVa,diffMin,0);
-						set_block_data(va,new_size,1);
-						returnBlock = va;
-
-					}
-				}
-				else{  //  maximize  blockOriginalSize < new_size
-					cprintf("the size of the next block: %d \n \n",nextSize);
-					cprintf("the size of the max difference: %d \n \n",diffMax);
-					if( is_free_block(nextVa) == 1 && nextSize >= diffMax){
-							//no relocate no split
-						cprintf("entered the if condition! \n \n");
-
-						if( nextSize < diffMax+16){ //edited
-							struct BlockElement* nextBlock = (struct BlockElement*) nextVa;
-							LIST_REMOVE(&freeBlocksList, nextBlock);
-							set_block_data(va, blockOriginalSize+nextSize, 1);
-							return (struct BlockElement*) va;
-
-						}
-						//no relocate split
-						else{
+//						 ######  NOT TESTED  #####
+//     DONE TESTEDDDDDD:)
+		struct BlockElement* nextBlock=(struct BlockElement*) nextVa;
+		struct BlockElement* splittedVa = (struct BlockElement*)((uint32)va + new_size) ;
+		LIST_INSERT_BEFORE(&freeBlocksList,nextBlock,splittedVa);
+		LIST_REMOVE(&freeBlocksList,nextBlock);
+		set_block_data(splittedVa,diffMin+nextSize,0);
+		set_block_data(va,new_size,1);
+		cprintf("the  blockOriginal size : %d \n \n", blockOriginalSize);
+		cprintf("the  new size : %d \n \n", new_size);
+		cprintf("the size of the min difference: %d \n \n",diffMin);
+		cprintf("the  nextblock size : %d \n \n", nextSize);
+		cprintf("the  splitedblock  size : %d \n \n", get_block_size(splittedVa));
+		return (struct BlockElement*) va;
 
 
-							set_block_data(va, new_size , 1);
-							//treated the free blocks as blocks not pointers and didn't use fee_block
-							struct BlockElement* nextBlock=(struct BlockElement*) nextVa;
-							struct BlockElement* splittedVa = (struct BlockElement*)((uint32)va + new_size) ;
-							LIST_INSERT_BEFORE(&freeBlocksList,nextBlock,splittedVa);
-							LIST_REMOVE(&freeBlocksList,nextBlock);
-							set_block_data(splittedVa,nextSize-diffMax,0); //edited (-) instead of (+)
-							//free_block(splittedVa);
-							set_block_data(va,new_size,1);
-							return(struct BlockElement*) va; //edited return immediately
+	}
+else if(is_free_block(nextVa) == 0){    // is_free_block(nextVa) == 0  && no space around it is free ( check size for compaction )
+	if(diffMin<16){//internal fragmentation
+	return va;
+	}
+	struct BlockElement* splittedVa = (struct BlockElement*)((uint32)va + new_size) ;
 
-						}
-						struct BlockElement* nextBlock = (struct BlockElement*) nextVa;
-						LIST_REMOVE(&freeBlocksList, nextBlock);
+	struct BlockElement* current;
+	uint32 inserted = 0;
 
-					}
-					else { // no space around
+	LIST_FOREACH( current , &freeBlocksList ){
+		if ( current > splittedVa  ){
+			LIST_INSERT_BEFORE(&freeBlocksList, current, splittedVa );
+			inserted = 1;
+			break;
+		}
+	}
+	if( inserted == 0 ){
+		LIST_INSERT_TAIL(&freeBlocksList,splittedVa);
+	}
+	//free_block(splittedVa);
+	set_block_data(splittedVa,diffMin,0);
+	set_block_data(va,new_size,1);
+	return (struct BlockElement*) va;
 
-						free_block(va);
-						return alloc_block_FF( new_size-8 );
+}
+}
+else{  //  maximize  blockOriginalSize < new_size
+	cprintf("the size of the next block: %d \n \n",nextSize);
+	cprintf("the size of the max difference: %d \n \n",diffMax);
+	if( is_free_block(nextVa) == 1 && nextSize >= diffMax){
+	//no relocate no split TESTED
+	if( nextSize < diffMax+16){
+// make it accepted when nextSize = diffMax & when it's splited & next_after_split < 16 ( internal fragmentation)
+	   struct BlockElement* nextBlock = (struct BlockElement*) nextVa;
+	   LIST_REMOVE(&freeBlocksList, nextBlock);
+		set_block_data(va, blockOriginalSize+nextSize, 1);
+		return (struct BlockElement*) va;
 
-					}
-				}
-				cprintf("block size before (original block size) %d \n" , get_block_size(va) );
-				set_block_data(va,new_size,1);
-				cprintf("block size after %d \n" , get_block_size(va) );
-				cprintf("return block add i returned %d \n" , returnBlock) ;
+	}
+	//no relocate split TESTED
+	else{//nextSize > diffMax
 
-				return returnBlock;
+		//set_block_data(va, new_size , 1);not needed
+		//treated the free blocks as blocks not pointers and didn't use fee_block
+		struct BlockElement* nextBlock=(struct BlockElement*) nextVa;
+		struct BlockElement* splittedVa = (struct BlockElement*)((uint32)va + new_size) ;
+		LIST_INSERT_BEFORE(&freeBlocksList,nextBlock,splittedVa);
+		LIST_REMOVE(&freeBlocksList,nextBlock);
+		set_block_data(splittedVa,nextSize-diffMax,0); //edited (-) instead of (+)
+		set_block_data(va,new_size,1);
+		return(struct BlockElement*) va; //edited return immediately
 
-			}
+		}
+        }
+	else { // no space around
+		//######NOT TESTED #######
+		free_block(va);
+		return alloc_block_FF( new_size-8 );}
+      }
+  }
+	//  ####### NOT TESTED ######
 	sbrk(new_size);
 	return NULL; // No suitable block found
 
 
 }
+
 
 /*********************************************************************************************/
 /*********************************************************************************************/
