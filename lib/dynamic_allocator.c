@@ -103,34 +103,33 @@ void initialize_dynamic_allocator(uint32 daStart, uint32 initSizeOfAllocatedSpac
 
 	//TODO: [PROJECT'24.MS1 - #04] [3] DYNAMIC ALLOCATOR - initialize_dynamic_allocator
 	//COMMENT THE FOLLOWING LINE BEFORE START CODING
-//	panic("initialize_dynamic_allocator is not implemented yet");
-
+	//panic("initialize_dynamic_allocator is not implemented yet");
 	//Your Code is Here...
+
 	uint32* BEG = (uint32*)daStart;
-		*BEG = 1;
-		uint32* END = (uint32*)(daStart + initSizeOfAllocatedSpace - 4);
-		*END = 1;
+	*BEG = 1;
+	uint32* END = (uint32*)(daStart + initSizeOfAllocatedSpace - 4);
+	*END = 1;
+
+	struct BlockElement* block = (struct BlockElement*)(daStart + 8);//points to va
+	uint32* header = (uint32*)(daStart + 4);
+	*header = initSizeOfAllocatedSpace - 8;
+	uint32* footer = (uint32*)(daStart + initSizeOfAllocatedSpace - 8);
+	*footer = initSizeOfAllocatedSpace - 8;
+
+	LIST_INIT(&freeBlocksList);
+
+	LIST_INSERT_HEAD(&freeBlocksList, block);
 
 
-		struct BlockElement* block = (struct BlockElement*)(daStart + 8);//points to va
-		uint32* header = (uint32*)(daStart + 4);
-		*header = initSizeOfAllocatedSpace - 8;
-		uint32* footer = (uint32*)(daStart + initSizeOfAllocatedSpace - 8);
-		*footer = initSizeOfAllocatedSpace - 8;
-
-		LIST_INIT(&freeBlocksList);
-
-		LIST_INSERT_HEAD(&freeBlocksList, block);
-
-
-	//	    uint32* va = header;
-	//
-	//		set_block_data( va, 30, 0);
-	//		int sizee = get_block_size(va);
-	//		int8 check = is_free_block(va);
-	//		cprintf("va = %x \n",va);
-	//		cprintf("check if free: %d \n", check);
-	//		cprintf("size: %d\n", sizee);
+//	    uint32* va = header;
+//
+//		set_block_data( va, 30, 0);
+//		int sizee = get_block_size(va);
+//		int8 check = is_free_block(va);
+//		cprintf("va = %x \n",va);
+//		cprintf("check if free: %d \n", check);
+//		cprintf("size: %d\n", sizee);
 
 }
 //==================================
@@ -187,8 +186,7 @@ void *alloc_block_FF(uint32 size)
 
 	//TODO: [PROJECT'24.MS1 - #06] [3] DYNAMIC ALLOCATOR - alloc_block_FF
 	//COMMENT THE FOLLOWING LINE BEFORE START CODING
-//	panic("alloc_block_FF is not implemented yet");
-
+	//panic("alloc_block_FF is not implemented yet");
 	//Your Code is Here...
 	uint32 total_size = size + 8; // Adjust for metadata
 
@@ -222,38 +220,6 @@ void *alloc_block_FF(uint32 size)
 	    sbrk(total_size);
 	    return NULL; // No suitable block found
 
-	uint32 total_size = size + 8; // Adjust for metadata
-
-		    if (total_size < 16) {
-		        cprintf("Size must be >= 16");
-		        return NULL;
-		    }
-		    struct BlockElement* current;//va
-		    LIST_FOREACH(current, &freeBlocksList) {
-		        //hwa hyfdal ylf l7ad ma next yb2a b null
-		    	uint32 current_size=get_block_size(current);
-		        if (current_size >= total_size) {
-		        	uint32 size_diff = (current_size - total_size);
-		            if (size_diff >= 16) {
-		                // Split the block
-		                struct BlockElement* free_block = (struct BlockElement*)((uint32)current + total_size); // edited is this va
-		                set_block_data(current,total_size , 1);
-		                set_block_data(free_block, (current_size- total_size), 0); // New block size , splitted correct
-		                LIST_INSERT_AFTER(&freeBlocksList, current, free_block);
-		                LIST_REMOVE(&freeBlocksList, current); // Remove from free list
-	                    return current;
-		            } else {
-		                // Internal fragmentation
-		                set_block_data(current, current_size, 1); // Just mark current block as used
-		                //cprintf("current size when size difference <16 : %d\n",current_size);
-		                LIST_REMOVE(&freeBlocksList, current);
-		                return current;
-		            }
-		        }
-		    }
-		    sbrk(total_size);
-		    return NULL; // No suitable block found
-
 }
 //=========================================
 // [4] ALLOCATE BLOCK BY BEST FIT:
@@ -262,16 +228,14 @@ void *alloc_block_BF(uint32 size)
 {
 	//TODO: [PROJECT'24.MS1 - BONUS] [3] DYNAMIC ALLOCATOR - alloc_block_BF
 	//COMMENT THE FOLLOWING LINE BEFORE START CODING
-//	panic("alloc_block_BF is not implemented yet");
-	//Your Code is Here...
-	if (size == 0) {
-
+	//panic("alloc_block_BF is not implemented yet");
+    //Your Code is Here...
+if (size == 0) {
 			cprintf("Size cant be 0");
 			return NULL;
 			}
 	uint32 total_size = size + 8; // Adjust for metadata
 	if(total_size<16)
-
 		total_size=16;
 
 	uint32 min_size_diff = 4294967295;
