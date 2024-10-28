@@ -458,6 +458,7 @@ int process_command(int number_of_arguments, char** arguments)
     //TODO: [PROJECT'24.MS1 - #01] [1] PLAY WITH CODE! - process_command
 
 	LIST_INIT(&foundCommands);
+
 	for (int i = 0; i < NUM_OF_COMMANDS; i++)
 	{
 		if (strcmp(arguments[0], commands[i].name) == 0)

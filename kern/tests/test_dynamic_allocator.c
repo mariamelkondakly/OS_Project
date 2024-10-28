@@ -1551,6 +1551,8 @@ void test_realloc_block_FF()
 
 	cprintf("[PARTIAL] test realloc_block with FIRST FIT completed. Evaluation = %d%\n", eval);
 
+
+	cprintf("[PARTIAL] test realloc_block with FIRST FIT completed. Evaluation = %d%\n", eval);
 }
 
 
@@ -1562,10 +1564,6 @@ void test_realloc_block_FF_COMPLETE()
 #endif
 
 	panic("this is UNSEEN test");
-
-
-
-
 
 
 }

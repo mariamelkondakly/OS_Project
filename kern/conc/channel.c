@@ -10,6 +10,7 @@
 #include <inc/string.h>
 #include <inc/disk.h>
 
+#include <inc/environment_definitions.h>
 //===============================
 // 1) INITIALIZE THE CHANNEL:
 //===============================
