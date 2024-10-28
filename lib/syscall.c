@@ -7,7 +7,6 @@ static inline uint32
 syscall(int num, uint32 a1, uint32 a2, uint32 a3, uint32 a4, uint32 a5)
 {
 	uint32 ret;
-	// menna comment
 
 	// Generic system call: pass system call number in AX,
 	// up to five parameters in DX, CX, BX, DI, SI.
@@ -300,19 +299,23 @@ void sys_utilities(char* utilityName, int value)
 void* sys_sbrk(int increment)
 {
 	//Comment the following line before start coding...
-	panic("not implemented yet");
-	return NULL;
+	//panic("not implemented yet");
+	return (void*)syscall(SYS_sbrk,increment,0,0,0,0);
 }
 
 void sys_free_user_mem(uint32 virtual_address, uint32 size)
 {
 	//Comment the following line before start coding...
-	panic("not implemented yet");
+	//panic("not implemented yet");
+	syscall(SYS_free_user_mem,virtual_address,size,0,0,0);
+	return;
 }
 
 void sys_allocate_user_mem(uint32 virtual_address, uint32 size)
 {
 	//Comment the following line before start coding...
-	panic("not implemented yet");
+	//panic("not implemented yet");
+	syscall(SYS_allocate_user_mem,virtual_address,size,0,0,0);
+
 }
 

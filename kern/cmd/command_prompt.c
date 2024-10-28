@@ -455,41 +455,45 @@ int execute_command(char *command_string)
 
 int process_command(int number_of_arguments, char** arguments)
 {
-	//TODO: [PROJECT'24.MS1 - #01] [1] PLAY WITH CODE! - process_command
+    //TODO: [PROJECT'24.MS1 - #01] [1] PLAY WITH CODE! - process_command
 
 	LIST_INIT(&foundCommands);
-		for (int i = 0; i < NUM_OF_COMMANDS; i++)
+
+	for (int i = 0; i < NUM_OF_COMMANDS; i++)
+	{
+		if (strcmp(arguments[0], commands[i].name) == 0)
 		{
-			if (strcmp(arguments[0], commands[i].name) == 0)
+			if( number_of_arguments-1 == commands[i].num_of_args|| (commands[i].num_of_args==-1 && number_of_arguments!=1))
 			{
-				if( number_of_arguments-1 == commands[i].num_of_args|| (commands[i].num_of_args==-1 && number_of_arguments!=1))
-				{
-					return i;
-				}
-				else{
-					LIST_INSERT_TAIL(&foundCommands,&commands[i]);
-					return CMD_INV_NUM_ARGS;
-				}
+				return i;
+			}
+			else{
+				LIST_INSERT_TAIL(&foundCommands,&commands[i]);
+				return CMD_INV_NUM_ARGS;
 			}
 		}
-			char* nameOftheCommand=commands[i].name;
+	}
+	 char * charFound;
+	for (int i = 0; i < NUM_OF_COMMANDS; i++){
+		bool isMatched=1;
+		char* nameOftheCommand=commands[i].name;
 
-				for (int j = 0; j < strlen(arguments[0]); j++){
-					charFound=strfind(nameOftheCommand,arguments[0][j]);
-					if(charFound==(commands[i].name+strlen(commands[i].name))){
-						isMatched=0;
-						break;
-					}
-					nameOftheCommand=charFound+1;
+			for (int j = 0; j < strlen(arguments[0]); j++){
+				charFound=strfind(nameOftheCommand,arguments[0][j]);
+				if(charFound==(commands[i].name+strlen(commands[i].name))){
+					isMatched=0;
+					break;
 				}
-				if(isMatched){
-					LIST_INSERT_TAIL(&foundCommands,&commands[i]);
-				}
-		}
-		int numOfFoundCmds = LIST_SIZE(&foundCommands);
-		if(numOfFoundCmds!=0){
-			return CMD_MATCHED;
-		}else{
-			return CMD_INVALID;
-		}
+				nameOftheCommand=charFound+1;
+			}
+			if(isMatched){
+				LIST_INSERT_TAIL(&foundCommands,&commands[i]);
+			}
+	}
+	int numOfFoundCmds = LIST_SIZE(&foundCommands);
+	if(numOfFoundCmds!=0){
+		return CMD_MATCHED;
+	}else{
+		return CMD_INVALID;
+	}
 }

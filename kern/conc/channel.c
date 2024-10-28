@@ -44,6 +44,7 @@ void sleep(struct Channel *chan, struct spinlock* lk)
 
 }
 
+
 //==================================================
 // 3) WAKEUP ONE BLOCKED PROCESS ON A GIVEN CHANNEL:
 //==================================================
@@ -71,6 +72,7 @@ void wakeup_one(struct Channel *chan)
 		sched_insert_ready0(ReadyPr);
 		release_spinlock(&ProcessQueues.qlock);
 }
+
 
 //====================================================
 // 4) WAKEUP ALL BLOCKED PROCESSES ON A GIVEN CHANNEL:
