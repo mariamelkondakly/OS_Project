@@ -44,9 +44,59 @@ void* kmalloc(unsigned int size)
 {
 	//TODO: [PROJECT'24.MS2 - #03] [1] KERNEL HEAP - kmalloc
 	// Write your code here, remove the panic and write your code
-	kpanic_into_prompt("kmalloc() is not implemented yet...!!");
-
+//	kpanic_into_prompt("kmalloc() is not implemented yet...!!");
 	// use "isKHeapPlacementStrategyFIRSTFIT() ..." functions to check the current strategy
+
+	 //TODO: [PROJECT'24.MS2 - #03] [1] KERNEL HEAP - kmalloc
+	  // Write your code here, remove the panic and write your code
+	  //kpanic_into_prompt("kmalloc() is not implemented yet...!!");
+	  // use "isKHeapPlacementStrategyFIRSTFIT() ..." functions to check the current strategy
+	  //page size = 4KB
+	if(isKHeapPlacementStrategyFIRSTFIT()==0)
+		return NULL;
+	  uint32 hard_limit=0;
+	  uint32 first_va_found=hard_limit+4;
+	  int pagesCounter=0;
+	  if(size < DYN_ALLOC_MAX_BLOCK_SIZE){
+	    return alloc_block_FF(size);
+	  }
+	  else{
+	    int no_Of_required_pages = ROUNDUP(size/4,1);
+	    //found a free frame to allocate
+	      while(first_va_found<KERNEL_HEAP_MAX){
+	      uint32 *page_table;
+	      struct FrameInfo *frame = get_frame_info(ptr_page_directory,first_va_found,&page_table);
+	      if(frame==NULL){
+	    	  pagesCounter++;
+	       if(pagesCounter==no_Of_required_pages){
+	    	   first_va_found-=no_Of_required_pages*PAGE_SIZE;
+	    	   break;
+	       }
+	      }
+	      else{
+	    	  pagesCounter=0;
+	      }
+	      first_va_found+=PAGE_SIZE;
+	    }//mapping to frames
+	      for(int i=0;i<no_Of_required_pages;i++){
+	         	  struct FrameInfo *frame_info =NULL;
+	         	  int ret = allocate_frame(&frame_info);
+	         	  if(ret==E_NO_MEM){//no free frame
+	         	       cprintf("no memory");
+	         	      return NULL;
+	         	     }
+	         	  else{
+	     		 int ret1 = map_frame(ptr_page_directory,frame_info,first_va_found,PERM_AVAILABLE | PERM_WRITEABLE);//hanshofha tany
+	     		 if(ret1==E_NO_MEM){
+	     			 return NULL;
+	     		 }
+	     		 first_va_found+= PAGE_SIZE;
+	     		   }
+	            }
+
+	      return (uint32 *)(first_va_found-no_Of_required_pages*PAGE_SIZE);
+	  }
+
 
 }
 
