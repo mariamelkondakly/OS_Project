@@ -14,7 +14,50 @@ int initialize_kheap_dynamic_allocator(uint32 daStart, uint32 initSizeToAllocate
 {
 	//TODO: [PROJECT'24.MS2 - #01] [1] KERNEL HEAP - initialize_kheap_dynamic_allocator
 	// Write your code here, remove the panic and write your code
-	panic("initialize_kheap_dynamic_allocator() is not implemented yet...!!");
+//	panic("initialize_kheap_dynamic_allocator() is not implemented yet...!!");
+	//TODO: [PROJECT'24.MS2 - #01] [1] KERNEL HEAP - initialize_kheap_dynamic_allocator
+		// Write your code here, remove the panic and write your code
+		//panic("initialize_kheap_dynamic_allocator() is not implemented yet...!!");
+		start=daStart;
+		  hard_limit =daLimit;
+		 // Initialize the segment_break which is the end of allocated space initially
+		// Break = start + initSizeToAllocate;
+
+		 uint32 edited_initSizeToAllocate= ROUNDUP(initSizeToAllocate,PAGE_SIZE);
+		 Break = start + edited_initSizeToAllocate;
+	   if ((Break >  hard_limit) ||(initSizeToAllocate == 0)) {
+			panic("Initial size exceeds heap limit! or Initial size = 0 ! ");
+			return -1; // Should never return because panic will halt the system
+		}
+	//  start=daStart;
+	//  hard_limit =daLimit;
+	// // Initialize the segment_break which is the end of allocated space initially
+	// Break = start + initSizeToAllocate;
+
+	// uint32 edited_initSizeToAllocate= ROUNDUP(initSizeToAllocate,PAGE_SIZE);
+	 for(int i=start;i<edited_initSizeToAllocate;i+=PAGE_SIZE){
+
+	    struct FrameInfo *ptr =NULL;
+		int x = allocate_frame(&ptr);
+		if (x == E_NO_MEM){
+			panic("NO MEMORY ....");
+					return -1;
+			}
+
+		int y = map_frame(ptr_page_directory,ptr,i,PERM_AVAILABLE|PERM_WRITEABLE);
+
+		if (y == E_NO_MEM){
+				panic("NO MEMORY ....");
+						return -1;
+				}
+
+	 }
+	initialize_dynamic_allocator( start,  initSizeToAllocate);
+
+		 // Return success (0)
+		 return 0;
+
+
 }
 
 void* sbrk(int numOfPages)
@@ -54,7 +97,7 @@ void* kmalloc(unsigned int size)
 	  //page size = 4KB
 	if(isKHeapPlacementStrategyFIRSTFIT()==0)
 		return NULL;
-	  uint32 hard_limit=0;
+//	  uint32 hard_limit=0;
 	  uint32 first_va_found=hard_limit+4;
 	  int pagesCounter=0;
 	  if(size < DYN_ALLOC_MAX_BLOCK_SIZE){
