@@ -10,11 +10,61 @@
 //Return:
 //	On success: 0
 //	Otherwise (if no memory OR initial size exceed the given limit): PANIC
+//Initialize the dynamic allocator of kernel heap with the given start address, size & limit
+//All pages in the given range should be allocated
+//Remember: call the initialize_dynamic_allocator(..) to complete the initialization
+//Return:
+//	On success: 0
+//	Otherwise (if no memory OR initial size exceed the given limit): PANIC
 int initialize_kheap_dynamic_allocator(uint32 daStart, uint32 initSizeToAllocate, uint32 daLimit)
 {
 	//TODO: [PROJECT'24.MS2 - #01] [1] KERNEL HEAP - initialize_kheap_dynamic_allocator
 	// Write your code here, remove the panic and write your code
-	panic("initialize_kheap_dynamic_allocator() is not implemented yet...!!");
+//	panic("initialize_kheap_dynamic_allocator() is not implemented yet...!!");
+	//TODO: [PROJECT'24.MS2 - #01] [1] KERNEL HEAP - initialize_kheap_dynamic_allocator
+		// Write your code here, remove the panic and write your code
+		//panic("initialize_kheap_dynamic_allocator() is not implemented yet...!!");
+		start=daStart;
+		  hard_limit =daLimit;
+		 // Initialize the segment_break which is the end of allocated space initially
+		// Break = start + initSizeToAllocate;
+
+		 uint32 edited_initSizeToAllocate= ROUNDUP(initSizeToAllocate,PAGE_SIZE);
+		 Break = start + edited_initSizeToAllocate;
+	   if ((Break >  hard_limit) ||(initSizeToAllocate == 0)) {
+			panic("Initial size exceeds heap limit! or Initial size = 0 ! ");
+			return -1; // Should never return because panic will halt the system
+		}
+	//  start=daStart;
+	//  hard_limit =daLimit;
+	// // Initialize the segment_break which is the end of allocated space initially
+	// Break = start + initSizeToAllocate;
+
+	// uint32 edited_initSizeToAllocate= ROUNDUP(initSizeToAllocate,PAGE_SIZE);
+	 for(int i=start;i<edited_initSizeToAllocate;i+=PAGE_SIZE){
+
+	    struct FrameInfo *ptr =NULL;
+	    ptr
+		int x = allocate_frame(&ptr);
+		if (x == E_NO_MEM){
+			panic("NO MEMORY ....");
+					return -1;
+			}
+
+		int y = map_frame(ptr_page_directory,ptr,i,PERM_AVAILABLE|PERM_WRITEABLE);
+
+		if (y == E_NO_MEM){
+				panic("NO MEMORY ....");
+						return -1;
+				}
+
+	 }
+	initialize_dynamic_allocator( start,  initSizeToAllocate);
+
+		 // Return success (0)
+		 return 0;
+
+
 }
 
 void* sbrk(int numOfPages)
