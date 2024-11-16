@@ -127,7 +127,6 @@ void initialize_paging()
 void initialize_frame_info(struct FrameInfo *ptr_frame_info)
 {
 	memset(ptr_frame_info, 0, sizeof(*ptr_frame_info));
-	LIST_INIT(&ptr_frame_info->referencesList);
 }
 
 //

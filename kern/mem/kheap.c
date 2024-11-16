@@ -115,24 +115,40 @@ unsigned int kheap_physical_address(unsigned int virtual_address)
 {
 	//TODO: [PROJECT'24.MS2 - #05] [1] KERNEL HEAP - kheap_physical_address
 	// Write your code here, remove the panic and write your code
-	panic("kheap_physical_address() is not implemented yet...!!");
+//	panic("kheap_physical_address() is not implemented yet...!!");
 
 	//return the physical address corresponding to given virtual_address
 	//refer to the project presentation and documentation for details
 
 	//EFFICIENT IMPLEMENTATION ~O(1) IS REQUIRED ==================
+
+	uint32 dirIndex = PDX(virtual_address);
+	uint32 pageTableIndex = PTX(virtual_address);
+	uint32 offset = virtual_address & 0xFFF;
+
+	return (ptr_page_directory + dirIndex)*PAGE_SIZE + pageTableIndex + offset;
+
 }
 
 unsigned int kheap_virtual_address(unsigned int physical_address)
 {
 	//TODO: [PROJECT'24.MS2 - #06] [1] KERNEL HEAP - kheap_virtual_address
 	// Write your code here, remove the panic and write your code
-	panic("kheap_virtual_address() is not implemented yet...!!");
+//	panic("kheap_virtual_address() is not implemented yet...!!");
 
 	//return the virtual address corresponding to given physical_address
 	//refer to the project presentation and documentation for details
 
 	//EFFICIENT IMPLEMENTATION ~O(1) IS REQUIRED ==================
+
+	uint32 offset = physical_address & 0xFFF;
+	struct FrameInfo* ptr_frame_info = to_frame_info(physical_address);
+
+	uint32 dirIndex = ptr_frame_info->DirIndex;
+	uint32 pageTableIndex = ptr_frame_info->PageIndex;
+
+	return dirIndex + pageTableIndex + offset;
+
 }
 //=================================================================================//
 //============================== BONUS FUNCTION ===================================//
