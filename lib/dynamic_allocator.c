@@ -106,10 +106,13 @@ void initialize_dynamic_allocator(uint32 daStart, uint32 initSizeOfAllocatedSpac
 	//panic("initialize_dynamic_allocator is not implemented yet");
 	//Your Code is Here...
 
-	uint32* BEG = (uint32*)daStart;
+	BEG = (uint32*)daStart;
 	*BEG = 1;
-	uint32* END = (uint32*)(daStart + initSizeOfAllocatedSpace - 4);
+	END = (uint32*)(daStart + initSizeOfAllocatedSpace - 4);
 	*END = 1;
+
+
+
 
 	struct BlockElement* block = (struct BlockElement*)(daStart + 8);//points to va
 	uint32* header = (uint32*)(daStart + 4);
@@ -217,9 +220,25 @@ void *alloc_block_FF(uint32 size)
 	            }
 	        }
 	    }
-	    sbrk(total_size);
-	    return NULL; // No suitable block found
 
+	    int noOfPagesNeeded=ROUNDUP(total_size,PAGE_SIZE);
+		uint32 sbrkReturn=(uint32)sbrk(noOfPagesNeeded);
+	    if(sbrkReturn==-1){
+	    	return NULL; // No suitable block found
+	    }
+	    struct BlockElement* lastFreeBlock = LIST_LAST(&freeBlocksList);
+	    uint32 finalSize=noOfPagesNeeded*PAGE_SIZE;
+	    if(((uint32)lastFreeBlock+get_block_size(lastFreeBlock)+4)==(uint32)END){
+	    	uint32 sumOfSizes=get_block_size(lastFreeBlock)+4+finalSize;
+	    	set_block_data(lastFreeBlock,sumOfSizes,0);
+		    END+=finalSize;
+		    return alloc_block_FF(size);
+	    }
+	    else{
+	    	set_block_data(lastFreeBlock,finalSize,0);
+		    END+=finalSize;
+		    return alloc_block_FF(size);
+	    }
 }
 //=========================================
 // [4] ALLOCATE BLOCK BY BEST FIT:
@@ -273,7 +292,7 @@ if (size == 0) {
 			return best_block;
 			}
 	}
-	sbrk(total_size);
+	sbrk(best_size);
 	return NULL; // No suitable block found
 
 

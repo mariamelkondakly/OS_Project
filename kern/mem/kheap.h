@@ -42,6 +42,8 @@ int numOfKheapVACalls ;
 
 
 //TODO: [PROJECT'24.MS2 - #01] [1] KERNEL HEAP - add suitable code here
-
+uint32 start ;// begin of the dynamic allocator area
+uint32 Break ;//end of the allocated space (current mapped area)
+uint32 hard_limit ;// max limit that can't be exceeded
 
 #endif // FOS_KERN_KHEAP_H_
