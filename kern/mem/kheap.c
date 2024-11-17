@@ -80,14 +80,48 @@ void* sbrk(int numOfPages)
 	 * 	1) Allocating additional pages for a kernel dynamic allocator will fail if the free frames are exhausted
 	 * 		or the break exceed the limit of the dynamic allocator. If sbrk fails, return -1
 	 */
+	int sizeNeeded=numOfPages*PAGE_SIZE;
+	int sizeAvailable=hard_limit-Break;
+
+	if(numOfPages==0){
+		return (void*)Break;
+	}
+	else if(numOfPages>0 ){
+		if( sizeNeeded<sizeAvailable){
+
+		uint32 prevBreak=Break;
+		for(int i=0; i<numOfPages;i++){
+
+			struct FrameInfo *ptr=NULL;
+
+			int x=allocate_frame(&ptr);
+			if (x == E_NO_MEM){
+				panic("NO MEMORY ....");
+				return (void*)-1;
+			}
+
+			int y = map_frame(ptr_page_directory,ptr,i,PERM_AVAILABLE|PERM_WRITEABLE);
+			if (y == E_NO_MEM){
+				panic("NO MEMORY ....");
+				return (void*)-1;
+			}
+		}
+		Break+=sizeNeeded;
+		return (void*)prevBreak;
+		}
+		else{
+			return (void*)-1 ;
+		}
+	}
+	return (void*)-1;
 
 	//MS2: COMMENT THIS LINE BEFORE START CODING==========
-	return (void*)-1 ;
+	//return (void*)-1 ;
 	//====================================================
 
 	//TODO: [PROJECT'24.MS2 - #02] [1] KERNEL HEAP - sbrk
 	// Write your code here, remove the panic and write your code
-	panic("sbrk() is not implemented yet...!!");
+	//panic("sbrk() is not implemented yet...!!");
 }
 
 //TODO: [PROJECT'24.MS2 - BONUS#2] [1] KERNEL HEAP - Fast Page Allocator

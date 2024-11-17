@@ -217,9 +217,25 @@ void *alloc_block_FF(uint32 size)
 	            }
 	        }
 	    }
-	    sbrk(total_size);
-	    return NULL; // No suitable block found
 
+	    int noOfPagesNeeded=ROUNDUP(total_size,PAGE_SIZE);
+		uint32 sbrkReturn=(uint32)sbrk(noOfPagesNeeded);
+	    if(sbrkReturn==-1){
+	    	return NULL; // No suitable block found
+	    }
+	    struct BlockElement* lastFreeBlock = LIST_LAST(&freeBlocksList);
+	    uint32 finalSize=noOfPagesNeeded*PAGE_SIZE;
+	    if(((uint32)lastFreeBlock+get_block_size(lastFreeBlock)+4)==(uint32)END){
+	    	uint32 sumOfSizes=get_block_size(lastFreeBlock)+4+finalSize;
+	    	set_block_data(lastFreeBlock,sumOfSizes,0);
+		    END+=finalSize;
+		    return alloc_block_FF(size);
+	    }
+	    else{
+	    	set_block_data(lastFreeBlock,finalSize,0);
+		    END+=finalSize;
+		    return alloc_block_FF(size);
+	    }
 }
 //=========================================
 // [4] ALLOCATE BLOCK BY BEST FIT:
