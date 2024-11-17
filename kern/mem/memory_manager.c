@@ -391,6 +391,12 @@ int map_frame(uint32 *ptr_page_directory, struct FrameInfo *ptr_frame_info, uint
 			unmap_frame(ptr_page_directory , virtual_address);
 	}
 	ptr_frame_info->references++;
+	uint32 dirIndex = PDX(virtual_address);
+	    uint32 pageTableIndex = PTX(virtual_address);
+	    ptr_frame_info->DirIndex = dirIndex;
+	    ptr_frame_info->PageIndex = pageTableIndex;
+
+
 
 	/*********************************************************************************/
 	/*NEW'23 el7:)
