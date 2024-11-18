@@ -246,7 +246,6 @@ void *alloc_block_FF(uint32 size)
 								cprintf("after freeing! \n \n");
 				return alloc_block_FF(size);
 
-
 //	    struct BlockElement* lastFreeBlock = LIST_LAST(&freeBlocksList);
 //	    if(((uint32)lastFreeBlock+get_block_size(lastFreeBlock)+4)==(uint32)END){
 //	    	uint32 sumOfSizes=get_block_size(lastFreeBlock)+4+finalSize;
@@ -340,7 +339,7 @@ void free_block(void *va)
 	else{
 
 //		test_free_block_FF
-
+		cprintf("entered free_block!");
 		uint32* prevFooter = (uint32*)((uint32)(va-8));
 		uint32 prevSize = *prevFooter & ~1 ;  //there's an extra bit we need to minus here!!!!!!!!!!
 		uint32* prevVa = (uint32*)((uint32)prevFooter-prevSize+8);
