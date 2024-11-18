@@ -235,12 +235,44 @@ void *alloc_block_FF(uint32 size)
 	    }
 
 		uint32 finalSize=noOfPagesNeeded*PAGE_SIZE;
+		cprintf("before initializing END! \n \n");
 
-		END+=finalSize;
+		uint32* END=(uint32*)((uint32)sbrk(0)-4);
+		cprintf("AFTER initializing END! \n \n");
 
-	    return (void *)sbrkReturn;
+				*END=1;
+				cprintf("before setting! \n \n");
 
+				set_block_data((uint32*)sbrkReturn,finalSize,1);
+				cprintf("after setting! \n \n");
 
+					    free_block((uint32*)sbrkReturn);
+						cprintf("after freeing! \n \n");
+		return alloc_block_FF(size);
+    	uint32 current_size=get_block_size(current);
+
+    	if (current_size >= total_size) {
+    		        	uint32 size_diff = (current_size - total_size);
+    		            if (size_diff >= 16) {
+    		                // Split the block
+    		                struct BlockElement* free_block = (struct BlockElement*)((uint32)current + total_size); // edited is this va
+    		                set_block_data(current,total_size , 1);
+    		                set_block_data(free_block, (current_size- total_size), 0); // New block size , splitted correct
+    		                LIST_INSERT_AFTER(&freeBlocksList, current, free_block);
+    		                LIST_REMOVE(&freeBlocksList, current); // Remove from free list
+    		    	    	cprintf("1.2 this returned at line 216 \n \n");
+    	                    return current;
+    		            } else {
+    		                // Internal fragmentation
+    		                set_block_data(current, current_size, 1); // Just mark current block as used
+    		                //cprintf("current size when size difference <16 : %d\n",current_size);
+    		                LIST_REMOVE(&freeBlocksList, current);
+    		    	    	cprintf("1.3 this returned at line 223 \n \n");
+    		                return current;
+    		            }
+    		        }
+
+    	return current;
 //	    struct BlockElement* lastFreeBlock = LIST_LAST(&freeBlocksList);
 //	    if(((uint32)lastFreeBlock+get_block_size(lastFreeBlock)+4)==(uint32)END){
 //	    	uint32 sumOfSizes=get_block_size(lastFreeBlock)+4+finalSize;
@@ -334,7 +366,7 @@ void free_block(void *va)
 	else{
 
 //		test_free_block_FF
-
+		cprintf("entered free_block!");
 		uint32* prevFooter = (uint32*)((uint32)(va-8));
 		uint32 prevSize = *prevFooter & ~1 ;  //there's an extra bit we need to minus here!!!!!!!!!!
 		uint32* prevVa = (uint32*)((uint32)prevFooter-prevSize+8);

@@ -104,6 +104,7 @@ void* sbrk(int numOfPages)
 		for (uint32 i = Break; i < Break+neededSize; i += PAGE_SIZE){
 
 			struct FrameInfo *ptr=NULL;
+		    cprintf("allocating frame at iteration %d\n", i);
 
 			int x=allocate_frame(&ptr); //allocation of the new frame
 			if (x == E_NO_MEM || ptr == NULL) {
@@ -125,13 +126,16 @@ void* sbrk(int numOfPages)
 						}
 						return (void*)-1;
 					}
+		    cprintf("DONE \n");
+
 		}
 		Break+=neededSize;
 		cprintf("Current Break: %d,\n", Break);
 
 //		struct BlockElement* lastFreeBlock = LIST_LAST(&freeBlocksList);
 //	    cprintf("old last free block size: %d \n \n",get_block_size(LIST_LAST(&freeBlocksList)));
-			    free_block((void*)prevBreak);
+
+
 //			    lastFreeBlock = LIST_LAST(&freeBlocksList);
 //			    cprintf("NEW last free block size: %d \n \n",get_block_size(lastFreeBlock));
 		return (void*)prevBreak;
@@ -158,61 +162,85 @@ void* sbrk(int numOfPages)
 
 void* kmalloc(unsigned int size)
 {
-	//TODO: [PROJECT'24.MS2 - #03] [1] KERNEL HEAP - kmalloc
-	// Write your code here, remove the panic and write your code
-//	kpanic_into_prompt("kmalloc() is not implemented yet...!!");
-	// use "isKHeapPlacementStrategyFIRSTFIT() ..." functions to check the current strategy
 
 	 //TODO: [PROJECT'24.MS2 - #03] [1] KERNEL HEAP - kmalloc
 	  // Write your code here, remove the panic and write your code
 	  //kpanic_into_prompt("kmalloc() is not implemented yet...!!");
 	  // use "isKHeapPlacementStrategyFIRSTFIT() ..." functions to check the current strategy
 	  //page size = 4KB
-	if(isKHeapPlacementStrategyFIRSTFIT()==0)
-		return NULL;
-//	  uint32 hard_limit=0;
-	  uint32 first_va_found=hard_limit+4;
-	  int pagesCounter=0;
-	  if(size < DYN_ALLOC_MAX_BLOCK_SIZE){
-	    return alloc_block_FF(size);
-	  }
-	  else{
-	    int no_Of_required_pages = ROUNDUP(size/4,1);
-	    //found a free frame to allocate
-	      while(first_va_found<KERNEL_HEAP_MAX){
-	      uint32 *page_table;
-	      struct FrameInfo *frame = get_frame_info(ptr_page_directory,first_va_found,&page_table);
-	      if(frame==NULL){
-	    	  pagesCounter++;
-	       if(pagesCounter==no_Of_required_pages){
-	    	   first_va_found-=no_Of_required_pages*PAGE_SIZE;
-	    	   break;
-	       }
-	      }
-	      else{
-	    	  pagesCounter=0;
-	      }
-	      first_va_found+=PAGE_SIZE;
-	    }//mapping to frames
-	      for(int i=0;i<no_Of_required_pages;i++){
-	         	  struct FrameInfo *frame_info =NULL;
-	         	  int ret = allocate_frame(&frame_info);
-	         	  if(ret==E_NO_MEM){//no free frame
-	         	       cprintf("no memory");
-	         	      return NULL;
-	         	     }
-	         	  else{
-	     		 int ret1 = map_frame(ptr_page_directory,frame_info,first_va_found,PERM_AVAILABLE | PERM_WRITEABLE);//hanshofha tany
-	     		 if(ret1==E_NO_MEM){
-	     			 return NULL;
-	     		 }
-	     		 first_va_found+= PAGE_SIZE;
-	     		   }
-	            }
+	 if (size == 0 || size > (KERNEL_HEAP_MAX - KERNEL_HEAP_START)) {
+		        cprintf("Invalid size for kmalloc: %u\n", size);
+		        return NULL;
+		    }
+//		  if(size < DYN_ALLOC_MAX_BLOCK_SIZE){
+//		  		  cprintf("ms1 alloc \n");
+//		  		  void * ptr =alloc_block_FF(size);
+//		  		  if(ptr==NULL)
+//		  			  return NULL;
+//		  		  return ptr;
+//		  	  }
 
-	      return (uint32 *)(first_va_found-no_Of_required_pages*PAGE_SIZE);
-	  }
+		    uint32 first_va_found = hard_limit+PAGE_SIZE;;
+		    int no_Of_required_pages = ROUNDUP(size, PAGE_SIZE) / PAGE_SIZE;
 
+		    int pagesCounter = 0;
+
+		    // Find contiguous free pages
+		    while (first_va_found < KERNEL_HEAP_MAX) {
+		        uint32 *page_table;
+		        struct FrameInfo *frame = get_frame_info(ptr_page_directory, first_va_found, &page_table);
+
+		        if (frame == NULL) {
+		            pagesCounter++;
+		            if (pagesCounter == no_Of_required_pages) {
+		                first_va_found -= (no_Of_required_pages - 1) * PAGE_SIZE;
+		                break;
+		            }
+		        } else {
+		            pagesCounter = 0;
+		        }
+
+		        first_va_found += PAGE_SIZE;
+		    }
+
+		    if (pagesCounter < no_Of_required_pages) {
+		        cprintf("Not enough contiguous space in kernel heap\n");
+		        return NULL;
+		    }
+
+		    // Map frames to the virtual addresses
+		    for (int i = 0; i < no_Of_required_pages; i++) {
+		        struct FrameInfo *frame_info = NULL;
+		        int ret = allocate_frame(&frame_info);
+
+		        if (ret == E_NO_MEM || frame_info == NULL) {
+		            cprintf("No memory for frame allocation\n");
+
+		            // Cleanup already allocated frames
+		            for (uint32 cleanup_va = first_va_found; cleanup_va < first_va_found + i * PAGE_SIZE; cleanup_va += PAGE_SIZE) {
+		                unmap_frame(ptr_page_directory, cleanup_va);
+		                free_frame(get_frame_info(ptr_page_directory, cleanup_va, NULL));
+		            }
+		            return NULL;
+		        }
+
+		        ret = map_frame(ptr_page_directory, frame_info, first_va_found + i * PAGE_SIZE, PERM_AVAILABLE | PERM_WRITEABLE);
+		        if (ret == E_NO_MEM) {
+		            cprintf("No memory for frame mapping\n");
+
+		            // Cleanup already allocated frames
+		            for (uint32 cleanup_va = first_va_found; cleanup_va < first_va_found + i * PAGE_SIZE; cleanup_va += PAGE_SIZE) {
+		                unmap_frame(ptr_page_directory, cleanup_va);
+		                free_frame(get_frame_info(ptr_page_directory, cleanup_va, NULL));
+		            }
+
+		            // Free the current frame
+		            free_frame(frame_info);
+		            return NULL;
+		        }
+		    }
+
+		    return (void*)first_va_found;
 
 }
 

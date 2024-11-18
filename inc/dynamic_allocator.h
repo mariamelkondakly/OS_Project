@@ -34,8 +34,7 @@ struct BlockElement  // for free linked list
 
 LIST_HEAD(MemBlock_LIST, BlockElement);
 struct MemBlock_LIST freeBlocksList;
-uint32* BEG;
-uint32* END;
+
 //=============================================================================
 
 /*Functions*/
