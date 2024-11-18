@@ -10,6 +10,7 @@
 
 struct Customer
 {
+	//hello project
 	int flightType;
 	int booked;
 };

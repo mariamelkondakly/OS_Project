@@ -166,6 +166,7 @@ void set_block_data(void* va, uint32 totalSize, bool isAllocated)
 //=========================================
 void *alloc_block_FF(uint32 size)
 {
+	cprintf("1. alloc_block_FF is entered \n \n");
 	//==================================================================================
 	//DON'T CHANGE THESE LINES==========================================================
 	//==================================================================================
@@ -188,10 +189,11 @@ void *alloc_block_FF(uint32 size)
 	//COMMENT THE FOLLOWING LINE BEFORE START CODING
 	//panic("alloc_block_FF is not implemented yet");
 	//Your Code is Here...
-	uint32 total_size = size + 8; // Adjust for metadata
+	int total_size = (int)size + 8; // Adjust for metadata
 
 	    if (total_size < 16) {
 	        cprintf("Size must be >= 16");
+	    	cprintf("1.1 this returned at line 200 \n \n");
 	        return NULL;
 	    }
 	    struct BlockElement* current;//va
@@ -207,19 +209,45 @@ void *alloc_block_FF(uint32 size)
 	                set_block_data(free_block, (current_size- total_size), 0); // New block size , splitted correct
 	                LIST_INSERT_AFTER(&freeBlocksList, current, free_block);
 	                LIST_REMOVE(&freeBlocksList, current); // Remove from free list
+	    	    	cprintf("1.2 this returned at line 216 \n \n");
                     return current;
 	            } else {
 	                // Internal fragmentation
 	                set_block_data(current, current_size, 1); // Just mark current block as used
 	                //cprintf("current size when size difference <16 : %d\n",current_size);
 	                LIST_REMOVE(&freeBlocksList, current);
+	    	    	cprintf("1.3 this returned at line 223 \n \n");
 	                return current;
 	            }
 	        }
 	    }
-	    sbrk(total_size);
-	    return NULL; // No suitable block found
+    	cprintf("total size is: %d \n \n", total_size);
 
+	    int noOfPagesNeeded=ROUNDUP(total_size,PAGE_SIZE)/PAGE_SIZE;
+    	cprintf("numofpagesneeded is: %d \n \n", noOfPagesNeeded);
+
+		uint32 sbrkReturn=(uint32)sbrk(noOfPagesNeeded);
+    	cprintf("sbrk returns: %d \n \n", sbrkReturn);
+
+	    if(sbrkReturn==-1){
+	    	cprintf("1.4 this returned at line 232 \n \n");
+	    	return NULL; // No suitable block found
+	    }
+	    struct BlockElement* lastFreeBlock = LIST_LAST(&freeBlocksList);
+	    uint32 finalSize=noOfPagesNeeded*PAGE_SIZE;
+	    if(((uint32)lastFreeBlock+get_block_size(lastFreeBlock)+4)==(uint32)END){
+	    	uint32 sumOfSizes=get_block_size(lastFreeBlock)+4+finalSize;
+	    	set_block_data(lastFreeBlock,sumOfSizes,0);
+		    END+=finalSize;
+	    	cprintf("1.5 this returned at line 241 \n \n");
+		    return alloc_block_FF(size);
+	    }
+	    else{
+	    	set_block_data(lastFreeBlock,finalSize,0);
+		    END+=finalSize;
+	    	cprintf("1.5 this returned at line 247 \n \n");
+		    return alloc_block_FF(size);
+	    }
 }
 //=========================================
 // [4] ALLOCATE BLOCK BY BEST FIT:
