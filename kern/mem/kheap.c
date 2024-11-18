@@ -88,7 +88,7 @@ void* sbrk(int numOfPages)
 
 	if(numOfPages==0){
 		cprintf("number of pages is 0, original break is returned. \n");
-		cprintf("2.1 sbrk return at 99 \n \n");
+		cprintf("2.1 sbrk return with numofpages=0 \n \n");
 		return (void*)Break;
 	}
 	if (numOfPages > 0 && numOfPages > (hard_limit - Break) / PAGE_SIZE) {
@@ -128,7 +128,14 @@ void* sbrk(int numOfPages)
 		}
 		Break+=neededSize;
 		cprintf("Current Break: %d,\n", Break);
+
+//		struct BlockElement* lastFreeBlock = LIST_LAST(&freeBlocksList);
+//	    cprintf("old last free block size: %d \n \n",get_block_size(LIST_LAST(&freeBlocksList)));
+			    free_block((void*)prevBreak);
+//			    lastFreeBlock = LIST_LAST(&freeBlocksList);
+//			    cprintf("NEW last free block size: %d \n \n",get_block_size(lastFreeBlock));
 		return (void*)prevBreak;
+
 		}
 		else{ //if the number of pages is less than 0
 			cprintf("2.4 sbrk return at 129 \n \n");

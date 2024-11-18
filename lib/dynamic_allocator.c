@@ -233,21 +233,27 @@ void *alloc_block_FF(uint32 size)
 	    	cprintf("1.4 this returned at line 232 \n \n");
 	    	return NULL; // No suitable block found
 	    }
-	    struct BlockElement* lastFreeBlock = LIST_LAST(&freeBlocksList);
-	    uint32 finalSize=noOfPagesNeeded*PAGE_SIZE;
-	    if(((uint32)lastFreeBlock+get_block_size(lastFreeBlock)+4)==(uint32)END){
-	    	uint32 sumOfSizes=get_block_size(lastFreeBlock)+4+finalSize;
-	    	set_block_data(lastFreeBlock,sumOfSizes,0);
-		    END+=finalSize;
-	    	cprintf("1.5 this returned at line 241 \n \n");
-		    return alloc_block_FF(size);
-	    }
-	    else{
-	    	set_block_data(lastFreeBlock,finalSize,0);
-		    END+=finalSize;
-	    	cprintf("1.5 this returned at line 247 \n \n");
-		    return alloc_block_FF(size);
-	    }
+
+		uint32 finalSize=noOfPagesNeeded*PAGE_SIZE;
+
+		END+=finalSize;
+
+	    return (void *)sbrkReturn;
+
+
+//	    struct BlockElement* lastFreeBlock = LIST_LAST(&freeBlocksList);
+//	    if(((uint32)lastFreeBlock+get_block_size(lastFreeBlock)+4)==(uint32)END){
+//	    	uint32 sumOfSizes=get_block_size(lastFreeBlock)+4+finalSize;
+//	    	set_block_data(lastFreeBlock,sumOfSizes,0);
+//	    	cprintf("1.5 this returned at line 241 \n \n");
+//		    return alloc_block_FF(size);
+//	    }
+//	    else{
+//	    	set_block_data(lastFreeBlock,finalSize,0);
+//		    END+=finalSize;
+//	    	cprintf("1.5 this returned at line 247 \n \n");
+//		    return alloc_block_FF(size);
+//	    }
 }
 //=========================================
 // [4] ALLOCATE BLOCK BY BEST FIT:
