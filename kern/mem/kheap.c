@@ -131,7 +131,6 @@ void* sbrk(int numOfPages)
 
 //		struct BlockElement* lastFreeBlock = LIST_LAST(&freeBlocksList);
 //	    cprintf("old last free block size: %d \n \n",get_block_size(LIST_LAST(&freeBlocksList)));
-			    free_block((void*)prevBreak);
 //			    lastFreeBlock = LIST_LAST(&freeBlocksList);
 //			    cprintf("NEW last free block size: %d \n \n",get_block_size(lastFreeBlock));
 		return (void*)prevBreak;

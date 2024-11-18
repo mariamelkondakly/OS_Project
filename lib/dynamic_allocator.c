@@ -236,9 +236,15 @@ void *alloc_block_FF(uint32 size)
 
 		uint32 finalSize=noOfPagesNeeded*PAGE_SIZE;
 
-		END+=finalSize;
+		uint32* END=(uint32*)((uint32)sbrk(0)-4);
+		*END=1;
 
-	    return (void *)sbrkReturn;
+		set_block_data((uint32*)sbrkReturn,finalSize,1);
+						cprintf("after setting! \n \n");
+
+							    free_block((uint32*)sbrkReturn);
+								cprintf("after freeing! \n \n");
+				return alloc_block_FF(size);
 
 
 //	    struct BlockElement* lastFreeBlock = LIST_LAST(&freeBlocksList);
