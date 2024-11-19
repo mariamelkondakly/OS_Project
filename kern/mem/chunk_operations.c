@@ -139,9 +139,29 @@ void* sys_sbrk(int numOfPages)
 	//TODO: [PROJECT'24.MS2 - #11] [3] USER HEAP - sys_sbrk
 	/*====================================*/
 	/*Remove this line before start coding*/
-	return (void*)-1 ;
+	//return (void*)-1 ;
 	/*====================================*/
 	struct Env* env = get_cpu_proc(); //the current running Environment to adjust its break limit
+
+	if(numOfPages==0)
+		return (void*) env->Break;
+
+	uint32 sizeNeeded= numOfPages*PAGE_SIZE;
+	uint32 sizeAvailable= env->hard_limit - env->Break;
+
+	if(sizeNeeded>sizeAvailable){
+		return (void*)-1;
+	}
+	uint32 prevBreak= env->Break;
+	env->Break+=sizeNeeded;
+	uint32* END=(uint32*)(prevBreak-4);
+	*END=1;
+	return (void*)prevBreak;
+
+
+
+
+
 
 
 }
