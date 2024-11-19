@@ -1028,7 +1028,11 @@ int test_kfree_bestfirstfit()
 		int freeFrames = sys_calculate_free_frames() ;
 		int freeDiskFrames = pf_calculate_free_frames() ;
 		kfree(ptr_allocations[0]);
+
+
 		if ((freeDiskFrames - pf_calculate_free_frames()) != 0) { correct = 0; cprintf("2.1 Page file is changed while it's not expected to. (pages are wrongly allocated/de-allocated in PageFile)\n"); }
+
+
 		if ((sys_calculate_free_frames() - freeFrames) < 512 ) { correct = 0; cprintf("2.1 Wrong kfree: pages in memory are not freed correctly\n"); }
 
 		//kfree 1st 2 KB from BLOCK Allocator

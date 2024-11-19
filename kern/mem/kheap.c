@@ -157,12 +157,12 @@ void* sbrk(int numOfPages)
 
 void* kmalloc(unsigned int size)
 {
-	cprintf("AQUAL size is %d \n",size);
+//	cprintf("AQUAL size is %d \n",size);
 	 if (size == 0 || size > (KERNEL_HEAP_MAX - KERNEL_HEAP_START)) {
 			        cprintf("Invalid size for kmalloc: %u\n", size);
 			        return NULL;
 			    }
-			  if(size < DYN_ALLOC_MAX_BLOCK_SIZE){
+			  if(size <= DYN_ALLOC_MAX_BLOCK_SIZE){
 			  		  cprintf("ms1 alloc \n");
 			  		  void * ptr =alloc_block_FF(size);
 			  		  if(ptr==NULL)
@@ -233,14 +233,15 @@ void* kmalloc(unsigned int size)
 			   	str.size=size;
 			   	str.VA=(void*)first_va_found;
 			   	for(int i=0;i<ARR_SIZE;i++){
-			   		if(pages_together[i]==NULL)
+			   		if(pages_together[i].VA==NULL)
 			   		{
-			   			pages_together[i] = &str;
+			   			pages_together[i] = str;
 			   			break;
 			   		}
 			   	}
 
 			   cprintf("list done \n");
+			   cprintf("add returned from kmalloc  %d \n" ,(void*)first_va_found);
 
 
 			    return (void*)first_va_found;
@@ -250,35 +251,49 @@ void* kmalloc(unsigned int size)
 
 void kfree(void* virtual_address)
 {
+	cprintf("add wanted to be freed %d \n" ,virtual_address);
+//	cprintf("hard_limit+PAGE_SIZE %d \n",hard_limit+PAGE_SIZE);
+//	cprintf("KERNEL_HEAP_MAX %d \n",KERNEL_HEAP_MAX);
+
 
 	if((uint32)virtual_address>=KERNEL_HEAP_START && (uint32)virtual_address<=Break){
 				//struct Frame_Info *ptr_frame_info ;
 				//ptr_frame_info = to_frame_info(physical_address) ;
 				//free_frame(ptr_frame_info);
+
 				free_block(virtual_address);
 			}
-			else if((uint32)virtual_address>hard_limit+PAGE_SIZE && (uint32)virtual_address<=KERNEL_HEAP_MAX){
+			else if((uint32)virtual_address>=hard_limit+PAGE_SIZE && (uint32)virtual_address<=KERNEL_HEAP_MAX){
 				struct allocated_together* my_pages = NULL;
 				for(int i=0;i<ARR_SIZE;i++){
-					if(pages_together[i]!=NULL && pages_together[i]->VA==virtual_address)
+					if(pages_together[i].VA!=NULL && pages_together[i].VA==virtual_address)
 						{
-						  my_pages =pages_together[i];
-						  pages_together[i] = NULL;
+						  my_pages =&pages_together[i];
+						  pages_together[i].VA = NULL;
 						  break;
 						 }
 					}
 				if(my_pages!= NULL) {
 					cprintf("PAGE SIZE IS %d \n",my_pages->size);
-				for(int i=0;i<my_pages->size;i++){
+					struct FrameInfo * frame_ptr =NULL;
+
+				for(int i=0;i<ROUNDUP(my_pages->size,PAGE_SIZE)/PAGE_SIZE;i++){
 				uint32 *ptr_page_table=NULL;
-				struct FrameInfo *frame_ptr= get_frame_info(ptr_page_directory,(uint32)virtual_address+ i*PAGE_SIZE,&ptr_page_table);
-				unmap_frame(ptr_page_directory, (uint32)virtual_address + i*PAGE_SIZE);
+				frame_ptr= get_frame_info(ptr_page_directory,(uint32)virtual_address+ i*PAGE_SIZE,&ptr_page_table);
+				if(frame_ptr!=NULL){
+//					cprintf("maria");
 				free_frame(frame_ptr);
+				unmap_frame(ptr_page_directory, (uint32)virtual_address + i*PAGE_SIZE);
+
 				}
+				}
+				cprintf("5alas tany for loop \n");
 				}
 			}else{
-				cprintf("Invalid Address");
+				panic("Invalid Address \n");
+				return;
 			}
+	cprintf("kfree done \n");
 }
 
 

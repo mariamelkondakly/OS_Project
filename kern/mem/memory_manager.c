@@ -558,6 +558,7 @@ struct freeFramesCounters calculate_available_frames()
 				totalFreeBuffered++ ;
 			else
 				totalFreeUnBuffered++ ;
+//			cprintf("infinit loop? \n");
 		}
 
 		/*2023: UPDATE based on suggestion from T112 2023.Term1*/
