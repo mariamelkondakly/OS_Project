@@ -121,7 +121,9 @@ struct Env {
 
 	//=======================================================================
 	//TODO: [PROJECT'24.MS2 - #10] [3] USER HEAP - add suitable code here
-
+	uint32 start ;// begin of the dynamic allocator area
+	uint32 Break ;//end of the allocated space (current mapped area)
+	uint32 hard_limit ;// max limit that can't be exceeded
 	//=======================================================================
 	//for page file management
 	uint32* disk_env_pgdir;

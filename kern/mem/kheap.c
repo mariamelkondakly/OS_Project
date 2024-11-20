@@ -71,9 +71,9 @@ int initialize_kheap_dynamic_allocator(uint32 daStart, uint32 initSizeToAllocate
 
 void* sbrk(int numOfPages)
 {
-	cprintf("2.0 sbrk entered \n \n");
+	//cprintf("2.0 sbrk entered \n \n");
 
-	cprintf("number of pages: %d \n \n", numOfPages);
+	//cprintf("number of pages: %d \n \n", numOfPages);
 
 	uint32 neededSize=numOfPages*PAGE_SIZE;
 	int sizeAvailable=hard_limit-Break;
@@ -83,12 +83,12 @@ void* sbrk(int numOfPages)
 	    return (void*)-1;
 	}
 
-	cprintf("Current Break: %d, Requested Pages: %d, Needed Size: %d\n", Break, numOfPages, neededSize);
-	cprintf("Available Space: %d, Hard Limit: %d\n", hard_limit - Break, hard_limit);
+	//cprintf("Current Break: %d, Requested Pages: %d, Needed Size: %d\n", Break, numOfPages, neededSize);
+	//cprintf("Available Space: %d, Hard Limit: %d\n", hard_limit - Break, hard_limit);
 
 	if(numOfPages==0){
-		cprintf("number of pages is 0, original break is returned. \n");
-		cprintf("2.1 sbrk return with numofpages=0 \n \n");
+		//cprintf("number of pages is 0, original break is returned. \n");
+		//cprintf("2.1 sbrk return with numofpages=0 \n \n");
 		return (void*)Break;
 	}
 	if (numOfPages > 0 && numOfPages > (hard_limit - Break) / PAGE_SIZE) {
@@ -127,7 +127,7 @@ void* sbrk(int numOfPages)
 					}
 		}
 		Break+=neededSize;
-		cprintf("Current Break: %d,\n", Break);
+		//cprintf("Current Break: %d,\n", Break);
 
 //		struct BlockElement* lastFreeBlock = LIST_LAST(&freeBlocksList);
 //	    cprintf("old last free block size: %d \n \n",get_block_size(LIST_LAST(&freeBlocksList)));
@@ -137,11 +137,11 @@ void* sbrk(int numOfPages)
 
 		}
 		else{ //if the number of pages is less than 0
-			cprintf("2.4 sbrk return at 129 \n \n");
+			//cprintf("2.4 sbrk return at 129 \n \n");
 			return (void*)-1 ;
 		}
 	}
-	cprintf("2.5 returned with null at line 132\n \n");
+	//cprintf("2.5 returned with null at line 132\n \n");
 	return (void*)-1;
 
 //	//MS2: COMMENT THIS LINE BEFORE START CODING==========
@@ -157,112 +157,222 @@ void* sbrk(int numOfPages)
 
 void* kmalloc(unsigned int size)
 {
-	//TODO: [PROJECT'24.MS2 - #03] [1] KERNEL HEAP - kmalloc
-	// Write your code here, remove the panic and write your code
-//	kpanic_into_prompt("kmalloc() is not implemented yet...!!");
-	// use "isKHeapPlacementStrategyFIRSTFIT() ..." functions to check the current strategy
+//	cprintf("AQUAL size is %d \n",size);
+	 if (size == 0 || size > (KERNEL_HEAP_MAX - KERNEL_HEAP_START)) {
+			        cprintf("Invalid size for kmalloc: %u\n", size);
+			        return NULL;
+			    }
+			  if(size <= DYN_ALLOC_MAX_BLOCK_SIZE){
+			  		  //cprintf("ms1 alloc \n");
+			  		  void * ptr =alloc_block_FF(size);
+			  		  if(ptr==NULL)
+		  			  return NULL;
+			  		  return ptr;
+			  	  }
 
-	 //TODO: [PROJECT'24.MS2 - #03] [1] KERNEL HEAP - kmalloc
-	  // Write your code here, remove the panic and write your code
-	  //kpanic_into_prompt("kmalloc() is not implemented yet...!!");
-	  // use "isKHeapPlacementStrategyFIRSTFIT() ..." functions to check the current strategy
-	  //page size = 4KB
-	if(isKHeapPlacementStrategyFIRSTFIT()==0)
-		return NULL;
-//	  uint32 hard_limit=0;
-	  uint32 first_va_found=hard_limit+4;
-	  int pagesCounter=0;
-	  if(size < DYN_ALLOC_MAX_BLOCK_SIZE){
-	    return alloc_block_FF(size);
-	  }
-	  else{
-	    int no_Of_required_pages = ROUNDUP(size/4,1);
-	    //found a free frame to allocate
-	      while(first_va_found<KERNEL_HEAP_MAX){
-	      uint32 *page_table;
-	      struct FrameInfo *frame = get_frame_info(ptr_page_directory,first_va_found,&page_table);
-	      if(frame==NULL){
-	    	  pagesCounter++;
-	       if(pagesCounter==no_Of_required_pages){
-	    	   first_va_found-=no_Of_required_pages*PAGE_SIZE;
-	    	   break;
-	       }
-	      }
-	      else{
-	    	  pagesCounter=0;
-	      }
-	      first_va_found+=PAGE_SIZE;
-	    }//mapping to frames
-	      for(int i=0;i<no_Of_required_pages;i++){
-	         	  struct FrameInfo *frame_info =NULL;
-	         	  int ret = allocate_frame(&frame_info);
-	         	  if(ret==E_NO_MEM){//no free frame
-	         	       cprintf("no memory");
-	         	      return NULL;
-	         	     }
-	         	  else{
-	     		 int ret1 = map_frame(ptr_page_directory,frame_info,first_va_found,PERM_AVAILABLE | PERM_WRITEABLE);//hanshofha tany
-	     		 if(ret1==E_NO_MEM){
-	     			 return NULL;
-	     		 }
-	     		 first_va_found+= PAGE_SIZE;
-	     		   }
-	            }
+			    uint32 first_va_found = hard_limit+PAGE_SIZE;;
+			    int no_Of_required_pages = ROUNDUP(size, PAGE_SIZE) / PAGE_SIZE;
 
-	      return (uint32 *)(first_va_found-no_Of_required_pages*PAGE_SIZE);
-	  }
+			    int pagesCounter = 0;
+
+			    // Find contiguous free pages
+			    while (first_va_found < KERNEL_HEAP_MAX) {
+			        uint32 *page_table;
+			        struct FrameInfo *frame = get_frame_info(ptr_page_directory, first_va_found, &page_table);
+
+			        if (frame == NULL) {
+			            pagesCounter++;
+			            if (pagesCounter == no_Of_required_pages) {
+			                first_va_found -= (no_Of_required_pages - 1) * PAGE_SIZE;
+			                break;
+			            }
+			        } else {
+			            pagesCounter = 0;
+			        }
+
+			        first_va_found += PAGE_SIZE;
+			    }
+
+			    if (pagesCounter < no_Of_required_pages) {
+			        cprintf("Not enough contiguous space in kernel heap\n");
+			        return NULL;
+			    }
+
+			    // Map frames to the virtual addresses
+			    for (int i = 0; i < no_Of_required_pages; i++) {
+			        struct FrameInfo *frame_info = NULL;
+			        int ret = allocate_frame(&frame_info);
+
+			        if (ret == E_NO_MEM || frame_info == NULL) {
+			            cprintf("No memory for frame allocation\n");
+
+			            // Cleanup already allocated frames
+			            for (uint32 k = first_va_found; k < first_va_found + i * PAGE_SIZE; k += PAGE_SIZE) {
+			                unmap_frame(ptr_page_directory, k);
+			                free_frame(get_frame_info(ptr_page_directory, k, NULL));
+			            }
+			            return NULL;
+			        }
+
+			        ret = map_frame(ptr_page_directory, frame_info, first_va_found + i * PAGE_SIZE, PERM_AVAILABLE | PERM_WRITEABLE);
+			        if (ret == E_NO_MEM) {
+			            cprintf("No memory for frame mapping\n");
 
 
+			            for (uint32 j = first_va_found; j < first_va_found + i * PAGE_SIZE; j += PAGE_SIZE) {
+			                unmap_frame(ptr_page_directory, j);
+			                free_frame(get_frame_info(ptr_page_directory, j, NULL));
+			            }
+
+
+			            free_frame(frame_info);
+			            return NULL;
+			        }
+			    }
+			    struct allocated_together str;
+			   	str.size=size;
+			   	str.VA=(void*)first_va_found;
+			   	for(int i=0;i<ARR_SIZE;i++){
+			   		if(pages_together[i].VA==NULL)
+			   		{
+			   			pages_together[i] = str;
+			   			break;
+			   		}
+			   	}
+
+			   //cprintf("list done \n");
+			   //cprintf("add returned from kmalloc  %d \n" ,(void*)first_va_found);
+
+
+			    return (void*)first_va_found;
 }
+
+
 
 void kfree(void* virtual_address)
 {
-	//TODO: [PROJECT'24.MS2 - #04] [1] KERNEL HEAP - kfree
-	// Write your code here, remove the panic and write your code
-	panic("kfree() is not implemented yet...!!");
+	//cprintf("add wanted to be freed %d \n" ,virtual_address);
+//	cprintf("hard_limit+PAGE_SIZE %d \n",hard_limit+PAGE_SIZE);
+//	cprintf("KERNEL_HEAP_MAX %d \n",KERNEL_HEAP_MAX);
 
-	//you need to get the size of the given allocation using its address
-	//refer to the project presentation and documentation for details
 
+	if((uint32)virtual_address>=KERNEL_HEAP_START && (uint32)virtual_address<=Break){
+				//struct Frame_Info *ptr_frame_info ;
+				//ptr_frame_info = to_frame_info(physical_address) ;
+				//free_frame(ptr_frame_info);
+
+				free_block(virtual_address);
+			}
+			else if((uint32)virtual_address>=hard_limit+PAGE_SIZE && (uint32)virtual_address<=KERNEL_HEAP_MAX){
+				struct allocated_together* my_pages = NULL;
+				for(int i=0;i<ARR_SIZE;i++){
+					if(pages_together[i].VA!=NULL && pages_together[i].VA==virtual_address)
+						{
+						  my_pages =&pages_together[i];
+						  pages_together[i].VA = NULL;
+						  break;
+						 }
+					}
+				if(my_pages!= NULL) {
+					cprintf("PAGE SIZE IS %d \n",my_pages->size);
+					struct FrameInfo * frame_ptr =NULL;
+
+				for(int i=0;i<ROUNDUP(my_pages->size,PAGE_SIZE)/PAGE_SIZE;i++){
+				uint32 *ptr_page_table=NULL;
+				frame_ptr= get_frame_info(ptr_page_directory,(uint32)virtual_address+ i*PAGE_SIZE,&ptr_page_table);
+				if(frame_ptr!=NULL){
+//					cprintf("maria");
+				free_frame(frame_ptr);
+				unmap_frame(ptr_page_directory, (uint32)virtual_address + i*PAGE_SIZE);
+
+				}
+				}
+				//cprintf("5alas tany for loop \n");
+				}
+			}else{
+				panic("Invalid Address \n");
+				return;
+			}
+	//cprintf("kfree done \n");
 }
+
 
 unsigned int kheap_physical_address(unsigned int virtual_address)
 {
     //TODO: [PROJECT'24.MS2 - #05] [1] KERNEL HEAP - kheap_physical_address
     // Write your code here, remove the panic and write your code
-//    panic("kheap_physical_address() is not implemented yet...!!");
+    //  panic("kheap_physical_address() is not implemented yet...!!");
 
     //return the physical address corresponding to given virtual_address
     //refer to the project presentation and documentation for details
 
     //EFFICIENT IMPLEMENTATION ~O(1) IS REQUIRED ==================
 
-    uint32 dirIndex = PDX(virtual_address);
-    uint32 pageTableIndex = PTX(virtual_address);
-    uint32 offset = virtual_address & 0xFFF;
-    //uint32 dirEntry=ptr_page_directory[dirIndex];
-    uint32 *ptr=NULL;
-    get_page_table(ptr_page_directory,virtual_address,&ptr);
-    uint32 frameNO=ptr[pageTableIndex];
-    cprintf("offset: %d \n \n", offset);
+    //cprintf("start of physical_address \n");
 
-    cprintf("Virtual address : %d \n \n", virtual_address);
+       if (virtual_address < KERNEL_HEAP_START || virtual_address >= KERNEL_HEAP_MAX){
+          return 0;
+       }
 
-    cprintf("Physical address : %d \n \n",frameNO + offset);
+       uint32 *page_table = NULL;
+       get_page_table(ptr_page_directory, virtual_address, &page_table);
 
-    return frameNO + offset;
+       if (page_table == NULL)
+       {
+        return 0;
+       }
+
+      uint32 page_entry = page_table[PTX(virtual_address)];
+
+     // Check if the page is present
+     if (!(page_entry & PERM_PRESENT))
+    {
+     return 0; // Page is not mapped
+    }
+
+    uint32 frame = page_entry & 0xFFFFF000;
+    uint32 offset = virtual_address & 0x00000FFF;
+
+    //cprintf("End of physical_address \n");
+    return frame|offset;
 
 }
+
 unsigned int kheap_virtual_address(unsigned int physical_address)
 {
-	//TODO: [PROJECT'24.MS2 - #06] [1] KERNEL HEAP - kheap_virtual_address
-	// Write your code here, remove the panic and write your code
-	panic("kheap_virtual_address() is not implemented yet...!!");
+//TODO: [PROJECT'24.MS2 - #06] [1] KERNEL HEAP - kheap_virtual_address
+// Write your code here, remove the panic and write your code
+//panic("kheap_virtual_address() is not implemented yet...!!");
 
-	//return the virtual address corresponding to given physical_address
-	//refer to the project presentation and documentation for details
+//return the virtual address corresponding to given physical_address
+//refer to the project presentation and documentation for details
 
-	//EFFICIENT IMPLEMENTATION ~O(1) IS REQUIRED ==================
+//EFFICIENT IMPLEMENTATION ~O(1) IS REQUIRED ==================
+
+
+
+    struct FrameInfo* ptr_frame_info = NULL;
+    ptr_frame_info = to_frame_info(physical_address);
+
+    if (ptr_frame_info->references == 0) {
+       return 0;
+    }
+
+    uint32 offset = physical_address & 0xFFF;
+    uint32 dirIndex = ptr_frame_info->DirIndex << 22;
+    uint32 pageTableIndex = ptr_frame_info->PageIndex << 12;
+
+    uint32 VA = dirIndex|pageTableIndex|offset;
+
+   if (VA < KERNEL_HEAP_START || VA >= KERNEL_HEAP_MAX){
+     return 0;
+   }
+   if( VA > hard_limit && VA < (hard_limit + PAGE_SIZE)){
+     return 0;
+   }
+
+    return VA;
+
 }
 //=================================================================================//
 //============================== BONUS FUNCTION ===================================//

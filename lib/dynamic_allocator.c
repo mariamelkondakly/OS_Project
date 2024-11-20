@@ -193,7 +193,7 @@ void *alloc_block_FF(uint32 size)
 
 	    if (total_size < 16) {
 	        cprintf("Size must be >= 16");
-	    	cprintf("1.1 this returned at line 200 \n \n");
+	    	//cprintf("1.1 this returned at line 200 \n \n");
 	        return NULL;
 	    }
 	    struct BlockElement* current;//va
@@ -221,16 +221,16 @@ void *alloc_block_FF(uint32 size)
 	            }
 	        }
 	    }
-    	cprintf("total size is: %d \n \n", total_size);
+    	//cprintf("total size is: %d \n \n", total_size);
 
 	    int noOfPagesNeeded=ROUNDUP(total_size,PAGE_SIZE)/PAGE_SIZE;
-    	cprintf("numofpagesneeded is: %d \n \n", noOfPagesNeeded);
+    	//cprintf("numofpagesneeded is: %d \n \n", noOfPagesNeeded);
 
 		uint32 sbrkReturn=(uint32)sbrk(noOfPagesNeeded);
-    	cprintf("sbrk returns: %d \n \n", sbrkReturn);
+    	//cprintf("sbrk returns: %d \n \n", sbrkReturn);
 
 	    if(sbrkReturn==-1){
-	    	cprintf("1.4 this returned at line 232 \n \n");
+	    	//cprintf("1.4 this returned at line 232 \n \n");
 	    	return NULL; // No suitable block found
 	    }
 
@@ -313,8 +313,28 @@ if (size == 0) {
 			return best_block;
 			}
 	}
-	sbrk(total_size);
-	return NULL; // No suitable block found
+	int noOfPagesNeeded=ROUNDUP(total_size,PAGE_SIZE)/PAGE_SIZE;
+	    	cprintf("numofpagesneeded is: %d \n \n", noOfPagesNeeded);
+
+			uint32 sbrkReturn=(uint32)sbrk(noOfPagesNeeded);
+	    	cprintf("sbrk returns: %d \n \n", sbrkReturn);
+
+		    if(sbrkReturn==-1){
+		    	cprintf("1.4 this returned at line 232 \n \n");
+		    	return NULL; // No suitable block found
+		    }
+
+			uint32 finalSize=noOfPagesNeeded*PAGE_SIZE;
+
+			uint32* END=(uint32*)((uint32)sbrk(0)-4);
+			*END=1;
+
+			set_block_data((uint32*)sbrkReturn,finalSize,1);
+							cprintf("after setting! \n \n");
+
+								    free_block((uint32*)sbrkReturn);
+									cprintf("after freeing! \n \n");
+					return alloc_block_FF(size);
 
 
 
