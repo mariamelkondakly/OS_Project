@@ -150,10 +150,56 @@ int createSharedObject(int32 ownerID, char* shareName, uint32 size, uint8 isWrit
 {
 	//TODO: [PROJECT'24.MS2 - #19] [4] SHARED MEMORY [KERNEL SIDE] - createSharedObject()
 	//COMMENT THE FOLLOWING LINE BEFORE START CODING
-	panic("createSharedObject is not implemented yet");
+	//panic("createSharedObject is not implemented yet");
 	//Your Code is Here...
 
 	struct Env* myenv = get_cpu_proc(); //The calling environment
+	if(get_share(ownerID,shareName)!=NULL){
+		return E_SHARED_MEM_EXISTS;
+	}
+	struct Share* sharedObject= create_share(ownerID, shareName,size,isWritable);
+	if(!sharedObject){
+		return E_NO_SHARE;
+	}
+
+	LIST_INSERT_TAIL(&AllShares.shares_list, sharedObject);
+
+	int noOfPagesNeeded=ROUNDUP(size, PAGE_SIZE)/PAGE_SIZE;
+
+	int frameStorageIndex=0;
+	for(int i=(uint32)virtual_address; i<((uint32)virtual_address+ROUNDUP(size, PAGE_SIZE));i+=PAGE_SIZE){
+		struct FrameInfo* ptr;
+		int x=allocate_frame(&ptr);
+
+		if(x==E_NO_MEM){
+			kfree(sharedObject);
+
+			for (uint32 k = (uint32)virtual_address; k < i; k += PAGE_SIZE) {
+				unmap_frame(myenv->env_page_directory, k);
+				free_frame(myenv->env_page_directory, k, NULL));
+			}
+
+		return E_NO_SHARE;
+		}
+
+		x=map_frame(myenv->env_page_directory, ptr, (uint32)virtual_address, PERM_WRITEABLE);
+
+		if(x==E_NO_MEM){
+			kfree(sharedObject);
+
+			for (uint32 k = (uint32)virtual_address; k < i<((uint32)virtual_address+ROUNDUP(size, PAGE_SIZE)); k += PAGE_SIZE) {
+				unmap_frame(myenv->env_page_directory, k);
+				free_frame(get_frame_info(myenv->env_page_directory, k, NULL));
+			}
+
+			return E_NO_SHARE;
+		}
+
+		sharedObject->framesStorage[frameStorageIndex]=ptr;
+		frameStorageIndex++;
+	}
+	return sharedObject->ID;
+
 }
 
 
