@@ -71,9 +71,9 @@ int initialize_kheap_dynamic_allocator(uint32 daStart, uint32 initSizeToAllocate
 
 void* sbrk(int numOfPages)
 {
-	cprintf("2.0 sbrk entered \n \n");
+	//cprintf("2.0 sbrk entered \n \n");
 
-	cprintf("number of pages: %d \n \n", numOfPages);
+	//cprintf("number of pages: %d \n \n", numOfPages);
 
 	uint32 neededSize=numOfPages*PAGE_SIZE;
 	int sizeAvailable=hard_limit-Break;
@@ -83,12 +83,12 @@ void* sbrk(int numOfPages)
 	    return (void*)-1;
 	}
 
-	cprintf("Current Break: %d, Requested Pages: %d, Needed Size: %d\n", Break, numOfPages, neededSize);
-	cprintf("Available Space: %d, Hard Limit: %d\n", hard_limit - Break, hard_limit);
+	//cprintf("Current Break: %d, Requested Pages: %d, Needed Size: %d\n", Break, numOfPages, neededSize);
+	//cprintf("Available Space: %d, Hard Limit: %d\n", hard_limit - Break, hard_limit);
 
 	if(numOfPages==0){
-		cprintf("number of pages is 0, original break is returned. \n");
-		cprintf("2.1 sbrk return with numofpages=0 \n \n");
+		//cprintf("number of pages is 0, original break is returned. \n");
+		//cprintf("2.1 sbrk return with numofpages=0 \n \n");
 		return (void*)Break;
 	}
 	if (numOfPages > 0 && numOfPages > (hard_limit - Break) / PAGE_SIZE) {
@@ -127,7 +127,7 @@ void* sbrk(int numOfPages)
 					}
 		}
 		Break+=neededSize;
-		cprintf("Current Break: %d,\n", Break);
+		//cprintf("Current Break: %d,\n", Break);
 
 //		struct BlockElement* lastFreeBlock = LIST_LAST(&freeBlocksList);
 //	    cprintf("old last free block size: %d \n \n",get_block_size(LIST_LAST(&freeBlocksList)));
@@ -137,11 +137,11 @@ void* sbrk(int numOfPages)
 
 		}
 		else{ //if the number of pages is less than 0
-			cprintf("2.4 sbrk return at 129 \n \n");
+			//cprintf("2.4 sbrk return at 129 \n \n");
 			return (void*)-1 ;
 		}
 	}
-	cprintf("2.5 returned with null at line 132\n \n");
+	//cprintf("2.5 returned with null at line 132\n \n");
 	return (void*)-1;
 
 //	//MS2: COMMENT THIS LINE BEFORE START CODING==========
@@ -163,7 +163,7 @@ void* kmalloc(unsigned int size)
 			        return NULL;
 			    }
 			  if(size <= DYN_ALLOC_MAX_BLOCK_SIZE){
-			  		  cprintf("ms1 alloc \n");
+			  		  //cprintf("ms1 alloc \n");
 			  		  void * ptr =alloc_block_FF(size);
 			  		  if(ptr==NULL)
 		  			  return NULL;
@@ -240,8 +240,8 @@ void* kmalloc(unsigned int size)
 			   		}
 			   	}
 
-			   cprintf("list done \n");
-			   cprintf("add returned from kmalloc  %d \n" ,(void*)first_va_found);
+			   //cprintf("list done \n");
+			   //cprintf("add returned from kmalloc  %d \n" ,(void*)first_va_found);
 
 
 			    return (void*)first_va_found;
@@ -251,7 +251,7 @@ void* kmalloc(unsigned int size)
 
 void kfree(void* virtual_address)
 {
-	cprintf("add wanted to be freed %d \n" ,virtual_address);
+	//cprintf("add wanted to be freed %d \n" ,virtual_address);
 //	cprintf("hard_limit+PAGE_SIZE %d \n",hard_limit+PAGE_SIZE);
 //	cprintf("KERNEL_HEAP_MAX %d \n",KERNEL_HEAP_MAX);
 
@@ -287,13 +287,13 @@ void kfree(void* virtual_address)
 
 				}
 				}
-				cprintf("5alas tany for loop \n");
+				//cprintf("5alas tany for loop \n");
 				}
 			}else{
 				panic("Invalid Address \n");
 				return;
 			}
-	cprintf("kfree done \n");
+	//cprintf("kfree done \n");
 }
 
 
@@ -301,39 +301,78 @@ unsigned int kheap_physical_address(unsigned int virtual_address)
 {
     //TODO: [PROJECT'24.MS2 - #05] [1] KERNEL HEAP - kheap_physical_address
     // Write your code here, remove the panic and write your code
-//    panic("kheap_physical_address() is not implemented yet...!!");
+    //  panic("kheap_physical_address() is not implemented yet...!!");
 
     //return the physical address corresponding to given virtual_address
     //refer to the project presentation and documentation for details
 
     //EFFICIENT IMPLEMENTATION ~O(1) IS REQUIRED ==================
 
-    uint32 dirIndex = PDX(virtual_address);
-    uint32 pageTableIndex = PTX(virtual_address);
-    uint32 offset = virtual_address & 0xFFF;
-    //uint32 dirEntry=ptr_page_directory[dirIndex];
-    uint32 *ptr=NULL;
-    get_page_table(ptr_page_directory,virtual_address,&ptr);
-    uint32 frameNO=ptr[pageTableIndex];
-    cprintf("offset: %d \n \n", offset);
+    //cprintf("start of physical_address \n");
 
-    cprintf("Virtual address : %d \n \n", virtual_address);
+       if (virtual_address < KERNEL_HEAP_START || virtual_address >= KERNEL_HEAP_MAX){
+          return 0;
+       }
 
-    cprintf("Physical address : %d \n \n",frameNO + offset);
+       uint32 *page_table = NULL;
+       get_page_table(ptr_page_directory, virtual_address, &page_table);
 
-    return frameNO + offset;
+       if (page_table == NULL)
+       {
+        return 0;
+       }
+
+      uint32 page_entry = page_table[PTX(virtual_address)];
+
+     // Check if the page is present
+     if (!(page_entry & PERM_PRESENT))
+    {
+     return 0; // Page is not mapped
+    }
+
+    uint32 frame = page_entry & 0xFFFFF000;
+    uint32 offset = virtual_address & 0x00000FFF;
+
+    //cprintf("End of physical_address \n");
+    return frame|offset;
 
 }
+
 unsigned int kheap_virtual_address(unsigned int physical_address)
 {
-	//TODO: [PROJECT'24.MS2 - #06] [1] KERNEL HEAP - kheap_virtual_address
-	// Write your code here, remove the panic and write your code
-	panic("kheap_virtual_address() is not implemented yet...!!");
+//TODO: [PROJECT'24.MS2 - #06] [1] KERNEL HEAP - kheap_virtual_address
+// Write your code here, remove the panic and write your code
+//panic("kheap_virtual_address() is not implemented yet...!!");
 
-	//return the virtual address corresponding to given physical_address
-	//refer to the project presentation and documentation for details
+//return the virtual address corresponding to given physical_address
+//refer to the project presentation and documentation for details
 
-	//EFFICIENT IMPLEMENTATION ~O(1) IS REQUIRED ==================
+//EFFICIENT IMPLEMENTATION ~O(1) IS REQUIRED ==================
+
+
+
+    struct FrameInfo* ptr_frame_info = NULL;
+    ptr_frame_info = to_frame_info(physical_address);
+
+    if (ptr_frame_info->references == 0) {
+       return 0;
+    }
+
+    uint32 offset = physical_address & 0xFFF;
+    uint32 dirIndex = ptr_frame_info->DirIndex << 22;
+    uint32 pageTableIndex = ptr_frame_info->PageIndex << 12;
+
+    uint32 VA = dirIndex|pageTableIndex|offset;
+
+   if (VA < KERNEL_HEAP_START || VA >= KERNEL_HEAP_MAX){
+     return 0;
+   }
+   if( VA > hard_limit && VA < (hard_limit + PAGE_SIZE)){
+     return 0;
+   }
+
+    return VA;
+
 }
 //=================================================================================//
 //============================== BONUS FUNCTION ===================================//
