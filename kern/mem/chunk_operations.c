@@ -158,12 +158,6 @@ void* sys_sbrk(int numOfPages)
 	*END=1;
 	return (void*)prevBreak;
 
-
-
-
-
-
-
 }
 
 //=====================================
