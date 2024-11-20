@@ -66,8 +66,20 @@ inline struct FrameInfo** create_frames_storage(int numOfFrames)
 {
 	//TODO: [PROJECT'24.MS2 - #16] [4] SHARED MEMORY - create_frames_storage()
 	//COMMENT THE FOLLOWING LINE BEFORE START CODING
-	panic("create_frames_storage is not implemented yet");
+	//panic("create_frames_storage is not implemented yet");
 	//Your Code is Here...
+	struct FrameInfo** frames=(struct FrameInfo**)kmalloc(numOfFrames*sizeof(struct FrameInfo*));
+	cprintf("pointer of the frame storage: %p \n", frames);
+	for(int i=0; i<numOfFrames;i++){
+		frames[i]=NULL;
+	}
+
+	if(frames==NULL){
+		panic("Failed to allocate memory for frames storage");
+		return NULL;
+	}
+
+	return (struct FrameInfo**)frames;
 
 }
 
@@ -81,8 +93,29 @@ struct Share* create_share(int32 ownerID, char* shareName, uint32 size, uint8 is
 {
 	//TODO: [PROJECT'24.MS2 - #16] [4] SHARED MEMORY - create_share()
 	//COMMENT THE FOLLOWING LINE BEFORE START CODING
-	panic("create_share is not implemented yet");
+	//panic("create_share is not implemented yet");
 	//Your Code is Here...
+
+
+	struct Share* shareObject=(struct Share*) kmalloc(size);
+	if (!shareObject) {
+	        return NULL;  // Memory allocation failed
+	    }
+	uint32 mask = 0x7FFFFFFF;
+	uint32 maskedVA=((uint32)shareObject&mask);
+
+	shareObject->framesStorage=create_frames_storage(ROUNDUP(size,PAGE_SIZE)/PAGE_SIZE);
+	if (!shareObject->framesStorage) {
+		kfree(shareObject);
+		return NULL;
+	}
+
+    strcpy(shareObject->name, shareName);
+	shareObject->ownerID=ownerID;
+	shareObject->references=1;
+	shareObject->isWritable=isWritable;
+	shareObject->ID=maskedVA;
+	return shareObject;
 
 }
 
@@ -97,8 +130,16 @@ struct Share* get_share(int32 ownerID, char* name)
 {
 	//TODO: [PROJECT'24.MS2 - #17] [4] SHARED MEMORY - get_share()
 	//COMMENT THE FOLLOWING LINE BEFORE START CODING
-	panic("get_share is not implemented yet");
+	//panic("get_share is not implemented yet");
 	//Your Code is Here...
+	struct Share* current;
+	LIST_FOREACH(current,&(AllShares.shares_list)){
+		if((strncmp(name, current->name, strlen(name)))&&current->ownerID==ownerID){
+			return current;
+		}
+	}
+
+	return NULL;
 
 }
 
