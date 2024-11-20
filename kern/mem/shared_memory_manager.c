@@ -176,7 +176,7 @@ int createSharedObject(int32 ownerID, char* shareName, uint32 size, uint8 isWrit
 
 			for (uint32 k = (uint32)virtual_address; k < i; k += PAGE_SIZE) {
 				unmap_frame(myenv->env_page_directory, k);
-				free_frame(myenv->env_page_directory, k, NULL));
+				free_frame(get_frame_info(myenv->env_page_directory, k, NULL));
 			}
 
 		return E_NO_SHARE;
@@ -187,7 +187,7 @@ int createSharedObject(int32 ownerID, char* shareName, uint32 size, uint8 isWrit
 		if(x==E_NO_MEM){
 			kfree(sharedObject);
 
-			for (uint32 k = (uint32)virtual_address; k < i<((uint32)virtual_address+ROUNDUP(size, PAGE_SIZE)); k += PAGE_SIZE) {
+			for (uint32 k = (uint32)virtual_address; k < ((uint32)virtual_address+ROUNDUP(size, PAGE_SIZE)); k += PAGE_SIZE) {
 				unmap_frame(myenv->env_page_directory, k);
 				free_frame(get_frame_info(myenv->env_page_directory, k, NULL));
 			}
