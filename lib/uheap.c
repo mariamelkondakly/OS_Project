@@ -38,7 +38,38 @@ void free(void* virtual_address)
 {
 	//TODO: [PROJECT'24.MS2 - #14] [3] USER HEAP [USER SIDE] - free()
 	// Write your code here, remove the panic and write your code
-	panic("free() is not implemented yet...!!");
+	//panic("free() is not implemented yet...!!");
+	if((uint32)virtual_address>=USER_HEAP_START && (uint32)virtual_address<=(myEnv->Break)){
+					free_block(virtual_address);
+	}
+	else if((uint32)virtual_address>=(myEnv->hard_limit)+PAGE_SIZE && (uint32)virtual_address<=USER_HEAP_MAX){
+			struct allocatedtogether* my_pages = NULL;
+			for(int i=0;i<ARR_SIZE;i++){
+				if(pagestogether[i].VA!=NULL && pagestogether[i].VA==virtual_address)
+					{
+					  my_pages =&pagestogether[i];
+					  pagestogether[i].VA = NULL;
+					  my_pages->size=0;
+					  break;
+					 }
+				}
+			if(my_pages!= NULL) {
+				/*struct FrameInfo * frame_ptr =NULL;
+				for(int i=0;i<ROUNDUP(my_pages->size,PAGE_SIZE)/PAGE_SIZE;i++){
+				  uint32 *ptr_page_table=NULL;
+				  frame_ptr= get_frame_info(ptr_page_directory,(uint32)virtual_address+ i*PAGE_SIZE,&ptr_page_table);
+				  if(frame_ptr!=NULL){
+				    free_frame(frame_ptr);
+			       unmap_frame(ptr_page_directory, (uint32)virtual_address + i*PAGE_SIZE);
+			       }
+		       }*/
+
+		     	  sys_free_user_mem((uint32)virtual_address,my_pages->size);
+		   }
+	}else{
+		 panic("Invalid Address \n");
+		 return;
+		 }
 }
 
 

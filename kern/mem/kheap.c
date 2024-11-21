@@ -157,7 +157,6 @@ void* sbrk(int numOfPages)
 
 void* kmalloc(unsigned int size)
 {
-//	cprintf("AQUAL size is %d \n",size);
 	 if (size == 0 || size > (KERNEL_HEAP_MAX - KERNEL_HEAP_START)) {
 			        cprintf("Invalid size for kmalloc: %u\n", size);
 			        return NULL;
@@ -252,16 +251,12 @@ void* kmalloc(unsigned int size)
 void kfree(void* virtual_address)
 {
 	//cprintf("add wanted to be freed %d \n" ,virtual_address);
-//	cprintf("hard_limit+PAGE_SIZE %d \n",hard_limit+PAGE_SIZE);
-//	cprintf("KERNEL_HEAP_MAX %d \n",KERNEL_HEAP_MAX);
+   //cprintf("hard_limit+PAGE_SIZE %d \n",hard_limit+PAGE_SIZE);
+   //cprintf("KERNEL_HEAP_MAX %d \n",KERNEL_HEAP_MAX);
 
 
 	if((uint32)virtual_address>=KERNEL_HEAP_START && (uint32)virtual_address<=Break){
-				//struct Frame_Info *ptr_frame_info ;
-				//ptr_frame_info = to_frame_info(physical_address) ;
-				//free_frame(ptr_frame_info);
-
-				free_block(virtual_address);
+			free_block(virtual_address);
 			}
 			else if((uint32)virtual_address>=hard_limit+PAGE_SIZE && (uint32)virtual_address<=KERNEL_HEAP_MAX){
 				struct allocated_together* my_pages = NULL;
@@ -281,7 +276,6 @@ void kfree(void* virtual_address)
 				uint32 *ptr_page_table=NULL;
 				frame_ptr= get_frame_info(ptr_page_directory,(uint32)virtual_address+ i*PAGE_SIZE,&ptr_page_table);
 				if(frame_ptr!=NULL){
-//					cprintf("maria");
 				free_frame(frame_ptr);
 				unmap_frame(ptr_page_directory, (uint32)virtual_address + i*PAGE_SIZE);
 

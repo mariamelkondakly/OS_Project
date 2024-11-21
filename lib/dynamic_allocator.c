@@ -166,7 +166,7 @@ void set_block_data(void* va, uint32 totalSize, bool isAllocated)
 //=========================================
 void *alloc_block_FF(uint32 size)
 {
-	cprintf("1. alloc_block_FF is entered \n \n");
+	//cprintf("1. alloc_block_FF is entered \n \n");
 	//==================================================================================
 	//DON'T CHANGE THESE LINES==========================================================
 	//==================================================================================
@@ -209,14 +209,14 @@ void *alloc_block_FF(uint32 size)
 	                set_block_data(free_block, (current_size- total_size), 0); // New block size , splitted correct
 	                LIST_INSERT_AFTER(&freeBlocksList, current, free_block);
 	                LIST_REMOVE(&freeBlocksList, current); // Remove from free list
-	    	    	cprintf("1.2 this returned at line 216 \n \n");
+	    	    	//cprintf("1.2 this returned at line 216 \n \n");
                     return current;
 	            } else {
 	                // Internal fragmentation
 	                set_block_data(current, current_size, 1); // Just mark current block as used
 	                //cprintf("current size when size difference <16 : %d\n",current_size);
 	                LIST_REMOVE(&freeBlocksList, current);
-	    	    	cprintf("1.3 this returned at line 223 \n \n");
+	    	    	//cprintf("1.3 this returned at line 223 \n \n");
 	                return current;
 	            }
 	        }
@@ -243,7 +243,7 @@ void *alloc_block_FF(uint32 size)
 						cprintf("after setting! \n \n");
 
 							    free_block((uint32*)sbrkReturn);
-								cprintf("after freeing! \n \n");
+								//cprintf("after freeing! \n \n");
 				return alloc_block_FF(size);
 
 

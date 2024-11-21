@@ -8,6 +8,8 @@
 #include <inc/trap.h>
 #include <inc/memlayout.h>
 #include <inc/fixed_point.h>
+#include <inc/memlayout.h>
+
 
 // An environment ID 'envid_t' has three parts:
 //
@@ -199,5 +201,14 @@ struct Env {
 #define LOG2NENV		(log2_ceil(NENV))
 #define ENVGENSHIFT		LOG2NENV	// >= LOGNENV
 #define ENVX(envid)		((envid) & (NEARPOW2NENV - 1))
+
+struct allocatedtogether{
+		uint32 size;
+		void* VA;
+};
+
+#define ARR_SIZE ((KERNEL_HEAP_MAX - KERNEL_HEAP_START) / PAGE_SIZE)
+struct allocatedtogether pagestogether[ARR_SIZE];
+
 
 #endif // !FOS_INC_ENV_H
