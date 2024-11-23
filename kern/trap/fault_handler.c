@@ -155,14 +155,32 @@ void fault_handler(struct Trapframe *tf)
 						//(e.g. pointing to unmarked user heap page, kernel or wrong access rights),
 				    	//your code is here
 					    cprintf("Entered checking for invalid pointers\n");
-
+					    bool isFaulted=1;
 						//uint32 *page_table;
+					    for(int i=0;i<U_ARR_SIZE;i++){
+							if(Allpages[i].env_id==faulted_env->env_id && Allpages[i].VA!=NULL)
+								{
+								if((uint32)Allpages[i].VA >= fault_va && Allpages[i].size + (uint32)Allpages[i].VA<=fault_va){
+								  isFaulted=0;
+//								  my_pages = (struct allocatedtogether*)&(Allpages[i]);
+//								  Allpages[i].VA = NULL;
+//								  my_pages->size=0;
+								  break;
+								}
+							}
+						}
+
 						uint32 page_perm = pt_get_page_permissions(faulted_env->env_page_directory,fault_va);//mesh mot2akeda
 						//struct FrameInfo *frame = get_frame_info(ptr_page_directory,fault_va,&page_table);
 						//uint32 page_table_entry = page_table[PTX(fault_va)];
 						if(fault_va >= USER_HEAP_START && fault_va <= USER_HEAP_MAX && !(page_perm & PERM_PRESENT)){//if pointing to unmarked user heap page
 						cprintf(" exit 1 \n");
 						env_exit();
+						}
+					    if(fault_va >= USER_HEAP_START && fault_va <= USER_HEAP_MAX &&isFaulted){
+							cprintf(" exits by the array \n");
+
+							env_exit();
 						}
 						else if (fault_va >= KERNEL_BASE) { // Kernel memory starts at KERNEL_BASE
 						cprintf(" exit 2 \n");
