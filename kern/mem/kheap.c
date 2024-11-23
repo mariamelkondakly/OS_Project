@@ -170,7 +170,7 @@ void* kmalloc(unsigned int size)
 			  		  return ptr;
 			  	  }
 
-			    uint32 first_va_found = hard_limit+PAGE_SIZE;;
+			    uint32 first_va_found = hard_limit+PAGE_SIZE;
 			    int no_Of_required_pages = ROUNDUP(size, PAGE_SIZE) / PAGE_SIZE;
 
 			    int pagesCounter = 0;
