@@ -19,8 +19,40 @@ inline struct WorkingSetElement* env_page_ws_list_create_element(struct Env* e, 
 	//TODO: [PROJECT'24.MS2 - #07] [2] FAULT HANDLER I - Create a new WS element
 	//If failed to create a new one, kernel should panic()!
 	//COMMENT THE FOLLOWING LINE BEFORE START CODING
-	panic("env_page_ws_list_create_element is not implemented yet");
+	//panic("env_page_ws_list_create_element is not implemented yet");
 	//Your Code is Here...
+        //cprintf("page_last_WS_element%d\n",(uint32)e->page_last_WS_element);
+        if(e->page_last_WS_element==NULL){
+     	struct WorkingSetElement wsElement;//=(struct WorkingSetElement*)kmalloc(sizeof(struct WorkingSetElement));
+    	//if(wsElement!=NULL){
+
+//    	struct FrameInfo *ptr =NULL;
+//		int x = allocate_frame(&ptr);
+//		if (x == E_NO_MEM){
+//			panic("NO MEMORY ....");
+//					return NULL;
+//			}
+//		cprintf("after allocating\n");
+//		int y = map_frame(e->env_page_directory,ptr,virtual_address,PERM_AVAILABLE|PERM_WRITEABLE |PERM_PRESENT);
+//		if (y == E_NO_MEM){
+//			create_page_table(ptr_page_directory,virtual_address);
+//			free_frame(ptr);
+//			panic("NO MEMORY ....");
+//			return NULL;
+//		}
+//		cprintf("after mapping\n");
+    	wsElement.virtual_address=virtual_address;
+    	struct WorkingSetElement* ptr = &wsElement;
+    	return ptr;
+    	}
+    	else{
+    	    	panic("NO MEMORY ....");
+    	    	return NULL;
+    	}
+//    }else{
+//    	panic("NO MEMORY ....");
+//    	return NULL;
+//    }
 
 }
 inline void env_page_ws_invalidate(struct Env* e, uint32 virtual_address)

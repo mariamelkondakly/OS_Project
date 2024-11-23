@@ -285,7 +285,7 @@ int get_page_table(uint32 *ptr_page_directory, const uint32 virtual_address, uin
 	}
 }
 
-void * create_page_table(uint32 *ptr_directory, const uint32 virtual_address)
+void* create_page_table(uint32 *ptr_directory, const uint32 virtual_address)
 {
 	//[PROJECT] create_page_table()
 	// Write your code here, remove the panic and write your code

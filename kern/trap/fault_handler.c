@@ -151,7 +151,32 @@ void fault_handler(struct Trapframe *tf)
 			//TODO: [PROJECT'24.MS2 - #08] [2] FAULT HANDLER I - Check for invalid pointers
 			//(e.g. pointing to unmarked user heap page, kernel or wrong access rights),
 			//your code is here
+			//TODO: [PROJECT'24.MS2 - #08] [2] FAULT HANDLER I - Check for invalid pointers
+						//(e.g. pointing to unmarked user heap page, kernel or wrong access rights),
+				    	//your code is here
+					    cprintf("Entered checking for invalid pointers\n");
 
+						//uint32 *page_table;
+						uint32 page_perm = pt_get_page_permissions(faulted_env->env_page_directory,fault_va);//mesh mot2akeda
+						//struct FrameInfo *frame = get_frame_info(ptr_page_directory,fault_va,&page_table);
+						//uint32 page_table_entry = page_table[PTX(fault_va)];
+						if(fault_va >= USER_HEAP_START && fault_va <= USER_HEAP_MAX && !(page_perm & PERM_PRESENT)){//if pointing to unmarked user heap page
+						cprintf(" exit 1 \n");
+						env_exit();
+						}
+						else if (fault_va >= KERNEL_BASE) { // Kernel memory starts at KERNEL_BASE
+						cprintf(" exit 2 \n");
+						env_exit();
+						}
+						else if (fault_va < USER_HEAP_START || fault_va > KERNEL_HEAP_MAX) {
+					    cprintf(" exit 3 \n");
+					    env_exit();
+					    }
+					    else if(!(page_perm & PERM_WRITEABLE)){
+					    cprintf(" exit 4 \n");
+						env_exit();
+						}
+					    cprintf("Finished checking for invalid pointers\n");
 			/*============================================================================================*/
 		}
 
@@ -221,16 +246,100 @@ void page_fault_handler(struct Env * faulted_env, uint32 fault_va)
 		int iWS =faulted_env->page_last_WS_index;
 		uint32 wsSize = env_page_ws_get_size(faulted_env);
 #endif
+		if(wsSize < (faulted_env->page_WS_max_size))
+			{
+				        //cprintf("PLACEMENT=========================WS Size = %d\n", wsSize );
+						//TODO: [PROJECT'24.MS2 - #09] [2] FAULT HANDLER I - Placement
+						// Write your code here, remove the panic and write your code
+						//panic("page_fault_handler().PLACEMENT is not implemented yet...!!");
+						cprintf("Entered placement\n");
+						int existsInDisk=0;
+						struct FrameInfo *frame=NULL;
+		                int alloc_ret = allocate_frame(&frame);
+					    if (alloc_ret == E_NO_MEM){
+					    cprintf("NO MEMORY ....");
+					    return;
+					    }
+						int map_ret = map_frame(faulted_env->env_page_directory,frame,fault_va,PERM_PRESENT|PERM_WRITEABLE);
+						if (map_ret == E_NO_MEM){
+						free_frame(frame);
+						cprintf("NO MEMORY ....");
+				    	return;
+						}
+						int ret = pf_read_env_page(faulted_env,(void*)fault_va);
+						if(ret== E_PAGE_NOT_EXIST_IN_PF){
+							//uint32 *page_table=NULL;
+							//struct FrameInfo *ptr_frame_info = get_frame_info(faulted_env->env_page_directory,fault_va,&page_table);
+							int rett = pf_update_env_page(faulted_env, fault_va, frame);
+							if(rett==0){
+								existsInDisk=1;
+							}
+							else{
+								unmap_frame(faulted_env->env_page_directory,fault_va);
+								free_frame(frame);
+								cprintf("else exit in Placement \n");
+								env_exit();
+							}
+						}
+						else{
+							existsInDisk=1;
+						}
+						if(existsInDisk==1){
+							//add the page in the working set list & update its last one
+							cprintf("before creating\n");
+							struct WorkingSetElement* FaultedElement = env_page_ws_list_create_element(faulted_env,fault_va);
+							pt_set_page_permissions(faulted_env->env_page_directory,fault_va,PERM_PRESENT,0);
+							LIST_INSERT_TAIL(&(faulted_env->page_WS_list),FaultedElement);
+							if(wsSize < (faulted_env->page_WS_max_size))
+								{
+									 faulted_env->page_last_WS_element=NULL;
+								}
+							else{
+								faulted_env->page_last_WS_element=LIST_FIRST(&(faulted_env->page_WS_list));
+							}
+						    return;
 
-	if(wsSize < (faulted_env->page_WS_max_size))
-	{
-		//cprintf("PLACEMENT=========================WS Size = %d\n", wsSize );
-		//TODO: [PROJECT'24.MS2 - #09] [2] FAULT HANDLER I - Placement
-		// Write your code here, remove the panic and write your code
-		panic("page_fault_handler().PLACEMENT is not implemented yet...!!");
+			}
 
-		//refer to the project presentation and documentation for details
-	}
+						/*if(ret==0){
+						uint32 *page_table;
+						struct FrameInfo *frame=NULL;
+						int alloc_ret = allocate_frame(&frame);
+						if (alloc_ret == E_NO_MEM){
+							cprintf("NO MEMORY ....");
+									return;
+							}
+						int map_ret = map_frame(ptr_page_directory,frame,fault_va,PERM_AVAILABLE|PERM_WRITEABLE| PERM_PRESENT);
+						if (map_ret == E_NO_MEM){
+							free_frame(frame);
+							cprintf("NO MEMORY ....");
+							 return;
+						}
+						if(pf_read_env_page(faulted_env,(uint32*)fault_va)==E_PAGE_NOT_EXIST_IN_PF){
+							unmap_frame(ptr_page_directory,fault_va);
+							free_frame(frame);
+							env_exit();
+							cprintf("NO MEMORY ....");
+							 return;
+						}
+
+						//add the page in the working set list & update its last one
+						cprintf("before creating\n");
+				    	struct WorkingSetElement* new_wsElement = env_page_ws_list_create_element(faulted_env,fault_va);
+				    	pt_set_page_permissions(faulted_env->env_page_directory,fault_va,PERM_PRESENT,0);
+						LIST_INSERT_AFTER(&(faulted_env->page_WS_list),new_wsElement,faulted_env->page_last_WS_element);
+						faulted_env->page_last_WS_element=new_wsElement;
+				         return;
+
+						  }*/
+
+
+
+
+
+
+						//refer to the project presentation and documentation for details
+					}
 	else
 	{
 		//cprintf("REPLACEMENT=========================WS Size = %d\n", wsSize );

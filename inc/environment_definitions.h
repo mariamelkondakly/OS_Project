@@ -97,6 +97,19 @@ struct Context {
   uint32 eip;
 };
 
+#define U_ARR_SIZE ((USER_HEAP_MAX - USER_HEAP_START) / PAGE_SIZE)
+struct allocatedtogether{
+		uint32 size;
+		void* VA;
+		int32 env_id;
+};
+//struct MarkedTogether{
+//		bool marked;
+//		void* VA;
+//};
+
+struct allocatedtogether Allpages[U_ARR_SIZE];
+
 struct Env {
 	//================
 	/*MAIN INFO...*/
@@ -186,6 +199,8 @@ struct Env {
 	uint32 nPageIn, nPageOut, nNewPageAdded;
 	uint32 nClocks ;
 
+
+//	struct MarkedTogether markedpages[U_ARR_SIZE]; // virtual pages for each user
 };
 
 #define PRIORITY_LOW    		1
@@ -202,13 +217,9 @@ struct Env {
 #define ENVGENSHIFT		LOG2NENV	// >= LOGNENV
 #define ENVX(envid)		((envid) & (NEARPOW2NENV - 1))
 
-struct allocatedtogether{
-		uint32 size;
-		void* VA;
-};
 
-#define ARR_SIZE ((KERNEL_HEAP_MAX - KERNEL_HEAP_START) / PAGE_SIZE)
-struct allocatedtogether pagestogether[ARR_SIZE];
+
+
 
 
 #endif // !FOS_INC_ENV_H

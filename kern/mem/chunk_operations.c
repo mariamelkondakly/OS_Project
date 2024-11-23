@@ -173,7 +173,40 @@ void allocate_user_mem(struct Env* e, uint32 virtual_address, uint32 size)
 
 	//TODO: [PROJECT'24.MS2 - #13] [3] USER HEAP [KERNEL SIDE] - allocate_user_mem()
 	// Write your code here, remove the panic and write your code
-	panic("allocate_user_mem() is not implemented yet...!!");
+	//panic("allocate_user_mem() is not implemented yet...!!");
+
+	if( virtual_address >= USER_HEAP_START && virtual_address < USER_HEAP_MAX ){
+
+		uint32 nopages = ROUNDUP(size, PAGE_SIZE) / PAGE_SIZE ;
+		for (uint32 i=0; i< nopages ;i++){
+
+			uint32* pageTable = NULL;
+			int tableExist = get_page_table(e->env_page_directory,virtual_address+i*PAGE_SIZE,&pageTable);
+
+			uint32* createdPageTable = NULL;
+			if(tableExist == 1){
+				createdPageTable = create_page_table(e->env_page_directory, virtual_address+i*PAGE_SIZE);
+			}
+
+			if(pageTable != NULL || createdPageTable != NULL){
+				pt_set_page_permissions(e->env_page_directory, virtual_address+i*PAGE_SIZE, PERM_AVAILABLE,0);
+
+				for(int i=0;i<U_ARR_SIZE;i++){
+					if(Allpages[i].VA==NULL){
+						Allpages[i].VA = (void*)virtual_address;
+						Allpages[i].size = size;
+						Allpages[i].env_id = e->env_id;
+						break;
+					}
+				}
+			}
+		}
+	}
+	else{
+		// terminate
+		return;
+	}
+
 }
 
 //=====================================
@@ -189,7 +222,47 @@ void free_user_mem(struct Env* e, uint32 virtual_address, uint32 size)
 
 	//TODO: [PROJECT'24.MS2 - #15] [3] USER HEAP [KERNEL SIDE] - free_user_mem
 	// Write your code here, remove the panic and write your code
-	panic("free_user_mem() is not implemented yet...!!");
+	//panic("free_user_mem() is not implemented yet...!!");
+
+
+	if( virtual_address >= USER_HEAP_START && virtual_address < USER_HEAP_MAX ){
+
+		uint32 nopages = ROUNDUP(size, PAGE_SIZE) / PAGE_SIZE ;
+		for (uint32 i=0; i< nopages ;i++){
+
+			uint32* pageTable = NULL;
+			int tableExist = get_page_table(e->env_page_directory,virtual_address+i*PAGE_SIZE,&pageTable);
+
+			if(pageTable != NULL){
+				pt_set_page_permissions(e->env_page_directory, virtual_address+i*PAGE_SIZE,0 ,PERM_AVAILABLE); // set present to 0
+
+				for(int i=0;i<U_ARR_SIZE;i++){
+					if(Allpages[i].VA==(uint32*)virtual_address && Allpages[i].env_id == e->env_id){
+						Allpages[i].VA = NULL;
+						Allpages[i].size = 0;
+						Allpages[i].env_id = -1;
+						break;
+					}
+				}
+
+				// free all pages from page file   (from appendix)
+				pf_remove_env_page(e, virtual_address);
+
+				// free from working set  (from appendix): Flush certain Virtual Address from Working Set
+				// Search for the given virtual address inside the working set of “e” and, if found, removes its entry.
+				env_page_ws_invalidate(e, virtual_address);
+
+			}
+//			else{
+//				// table not exist so terminate
+//				return;
+//			}
+		}
+	}
+	else{
+		// terminate
+		return;
+	}
 
 
 	//TODO: [PROJECT'24.MS2 - BONUS#3] [3] USER HEAP [KERNEL SIDE] - O(1) free_user_mem
