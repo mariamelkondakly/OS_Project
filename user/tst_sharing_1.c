@@ -39,7 +39,10 @@ _main(void)
 		expected = 1+1 ; /*1page +1table*/
 		int diff = (freeFrames - sys_calculate_free_frames());
 		if (diff < expected || diff > expected +1+1 /*extra 1 page & 1 table for sbrk (at max)*/) {is_correct = 0; cprintf("Wrong allocation (current=%d, expected=%d): make sure that you allocate the required space in the user environment and add its frames to frames_storage", freeFrames - sys_calculate_free_frames(), expected);}
+		cprintf(" \n expected va: %d \n",(uint32)pagealloc_start);
 		if (is_correct) eval += 20 ;
+		cprintf("\n EVALUATION: %d \n",eval);
+
 
 		is_correct = 1;
 		freeFrames = sys_calculate_free_frames() ;
@@ -48,8 +51,9 @@ _main(void)
 		expected = 2 ; /*2pages*/
 		diff = (freeFrames - sys_calculate_free_frames());
 		if (diff < expected || diff > expected +1+1 /*extra 1 page & 1 table for sbrk (at max)*/) {is_correct = 0; cprintf("Wrong allocation (current=%d, expected=%d): make sure that you allocate the required space in the user environment and add its frames to frames_storage", freeFrames - sys_calculate_free_frames(), expected);}
+		cprintf("\n expected va: %d \n",(uint32)(pagealloc_start + 1 * PAGE_SIZE));
 		if (is_correct) eval += 20 ;
-
+		cprintf("\n EVALUATION: %d \n",eval);
 		is_correct = 1;
 		freeFrames = sys_calculate_free_frames() ;
 		y = smalloc("y", 4, 1);
@@ -57,7 +61,10 @@ _main(void)
 		expected = 1 ; /*1page*/
 		diff = (freeFrames - sys_calculate_free_frames());
 		if (diff < expected || diff > expected +1+1 /*extra 1 page & 1 table for sbrk (at max)*/) {is_correct = 0; cprintf("Wrong allocation (current=%d, expected=%d): make sure that you allocate the required space in the user environment and add its frames to frames_storage", freeFrames - sys_calculate_free_frames(), expected);}
+		cprintf(" \n expected va: %d \n",(uint32)(pagealloc_start + 3 * PAGE_SIZE));
 		if (is_correct) eval += 20 ;
+		cprintf("\n EVALUATION: %d \n",eval);
+
 	}
 	cprintf("Step A is completed successfully!!\n\n\n");
 

@@ -3,7 +3,27 @@
 //==================================================================================//
 //============================ REQUIRED FUNCTIONS ==================================//
 //==================================================================================//
+#define USER_HEAP_MAX_PAGES ((USER_HEAP_MAX - (USER_HEAP_START+ DYN_ALLOC_MAX_SIZE)) / PAGE_SIZE)
+static uint8 userHeapBitmap[USER_HEAP_MAX_PAGES] = {0}; // Bitmap to track allocations
 
+int isAddressAllocated(uint32 address) {
+    uint32 pageIndex = ROUNDUP((address - USER_HEAP_START),PAGE_SIZE) / PAGE_SIZE;
+    return userHeapBitmap[pageIndex];
+}
+
+void markAddressRangeAsAllocated(uint32 startAddress, int numOfPages) {
+    for (int i = 0; i < numOfPages; i++) {
+        uint32 pageIndex = ROUNDUP((startAddress - USER_HEAP_START),PAGE_SIZE) / PAGE_SIZE + i;
+        userHeapBitmap[pageIndex] = 1;
+    }
+}
+
+void markAddressRangeAsFree(uint32 startAddress, int numOfPages) {
+    for (int i = 0; i < numOfPages; i++) {
+        uint32 pageIndex = (startAddress - USER_HEAP_START) / PAGE_SIZE + i;
+        userHeapBitmap[pageIndex] = 0;
+    }
+}
 //=============================================
 // [1] CHANGE THE BREAK LIMIT OF THE USER HEAP:
 //=============================================
@@ -45,17 +65,80 @@ void free(void* virtual_address)
 //=================================
 // [4] ALLOCATE SHARED VARIABLE:
 //=================================
-void* smalloc(char *sharedVarName, uint32 size, uint8 isWritable)
+void* smalloc(char* sharedVarName, uint32 size, uint8 isWritable)
 {
-	//==============================================================
-	//DON'T CHANGE THIS CODE========================================
-	if (size == 0) return NULL ;
-	//==============================================================
-	//TODO: [PROJECT'24.MS2 - #18] [4] SHARED MEMORY [USER SIDE] - smalloc()
-	// Write your code here, remove the panic and write your code
-	panic("smalloc() is not implemented yet...!!");
-	return NULL;
+    //==============================================================
+    // DON'T CHANGE THIS CODE
+    if (size == 0) return NULL;
+    //==============================================================
+
+    // Check if the size exceeds the available heap space
+    if (size > (USER_HEAP_MAX - USER_HEAP_START)) {
+        return NULL;
+    }
+
+    //uint32 first_va_found = myEnv->hard_limit + PAGE_SIZE; // Start searching after the hard limit
+	uint32 first_va_found = USER_HEAP_START + DYN_ALLOC_MAX_SIZE + PAGE_SIZE; //UHS + 32MB + 4KB
+
+    int numOfPagesNeeded = ROUNDUP(size, PAGE_SIZE) / PAGE_SIZE;
+    int pagesCounter = 0;
+    bool found = 0;
+
+
+    while (first_va_found < USER_HEAP_MAX) {
+        if (!isAddressAllocated(first_va_found)) {
+            pagesCounter++;
+            if (pagesCounter == numOfPagesNeeded) {
+                // Calculate the start of the contiguous block
+                first_va_found -= (numOfPagesNeeded - 1) * PAGE_SIZE;
+                break;
+            }
+        } else {
+            pagesCounter = 0; // Reset if the block is not contiguous
+        }
+
+        first_va_found += PAGE_SIZE;
+    }
+//	 while(first_va_found<USER_HEAP_MAX){
+//		 for(int i=0;i<U_ARR_SIZE;i++){
+//			 if(Allpages[i].VA!=NULL){
+//				 if(Allpages[i].VA==(void*)first_va_found){
+//					 pagesCounter=0;
+//					 first_va_found += ROUNDUP(Allpages[i].size,PAGE_SIZE);
+//					 found=1;
+//					 break;
+//				 }
+//			 }
+//		 }
+//		 if (found) {
+//		   continue;
+//		 }
+//
+//		 pagesCounter++;
+//		 if(pagesCounter==numOfPagesNeeded){
+//			first_va_found -= (numOfPagesNeeded - 1) * PAGE_SIZE;
+//			break;
+//		 }
+//		 first_va_found +=PAGE_SIZE;
+//	 }
+
+
+    if (pagesCounter < numOfPagesNeeded) {
+           cprintf("Not enough contiguous space in kernel heap\n");
+           return NULL;
+       }
+
+       int x=sys_createSharedObject(sharedVarName,size,isWritable,(void*)first_va_found);
+       if(x==E_NO_SHARE||x==E_SHARED_MEM_EXISTS||x==E_NO_MEM){
+       	return NULL;
+       }
+       markAddressRangeAsAllocated(first_va_found, numOfPagesNeeded);
+
+
+       cprintf("the starting first_va_found: %d", first_va_found);
+   	return (void*)first_va_found;
 }
+
 
 //========================================
 // [5] SHARE ON ALLOCATED SHARED VARIABLE:
