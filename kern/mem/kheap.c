@@ -144,9 +144,9 @@ void* sbrk(int numOfPages)
 	//cprintf("2.5 returned with null at line 132\n \n");
 	return (void*)-1;
 
-//	//MS2: COMMENT THIS LINE BEFORE START CODING==========
-//	//return (void*)-1 ;
-//	//====================================================
+	//MS2: COMMENT THIS LINE BEFORE START CODING==========
+	//return (void*)-1 ;
+	//====================================================
 
 	//TODO: [PROJECT'24.MS2 - #02] [1] KERNEL HEAP - sbrk
 	// Write your code here, remove the panic and write your code
