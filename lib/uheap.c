@@ -136,7 +136,8 @@ void* smalloc(char* sharedVarName, uint32 size, uint8 isWritable)
 //       ((uint32*)first_va_found)[0]=-1;
 //       cprintf("what is in that location: %d \n",((uint32*)first_va_found)[0]);
        //cprintf("expected va: %d \n",first_va_found);
-
+//       ((uint32*)first_va_found)[0]=-1;
+//       cprintf("trial 1: %d \n", ((uint32*)first_va_found)[0]);
    	return (void*)first_va_found;
 }
 
@@ -208,7 +209,34 @@ void sfree(void* virtual_address)
 {
 	//TODO: [PROJECT'24.MS2 - BONUS#4] [4] SHARED MEMORY [USER SIDE] - sfree()
 	// Write your code here, remove the panic and write your code
-	panic("sfree() is not implemented yet...!!");
+	//panic("sfree() is not implemented yet...!!");
+	uint32 startVa=USER_HEAP_MAX - (USER_HEAP_START+ DYN_ALLOC_MAX_SIZE+PAGE_SIZE);
+	uint32 endOfPage=startVa+PAGE_SIZE;
+	uint32 finalVa;
+	int32 ID;
+	bool found=0;
+	while(endOfPage<=USER_HEAP_MAX){
+		if((uint32)virtual_address==startVa||(uint32)virtual_address==USER_HEAP_MAX){
+			found=1;
+			finalVa=startVa;
+			break;
+		}
+		else if((uint32)virtual_address==endOfPage){
+			found=1;
+			finalVa=endOfPage;
+			break;
+		}
+		else if((uint32)virtual_address>startVa&&(uint32)virtual_address<endOfPage){
+			found=1;
+			finalVa=startVa;
+			break;
+		}
+		startVa=endOfPage;
+		endOfPage+=PAGE_SIZE;
+	}
+	if(found){
+
+	}
 }
 
 

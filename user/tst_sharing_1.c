@@ -75,23 +75,20 @@ _main(void)
 		int i=0;
 		for(;i<PAGE_SIZE/4;i++)
 		{
-			cprintf("BEFORE X[I] IN 1ST FOR LOOP\n");
 			x[i] = -1;
-			cprintf("AFTER X[I] IN 1ST FOR LOOP\n");
 			y[i] = -1;
-			cprintf("AFTER Y[I] IN 1ST FOR LOOP\n");
 
 		}
-		cprintf("EXITED 1ST FOR LOOP\n");
+		//cprintf("EXITED 1ST FOR LOOP\n");
 
 		i=0;
 		for(;i<2*PAGE_SIZE/4;i++)
 		{
-			cprintf("ENTERED 2ND FOR LOOP\n");
+			//cprintf("ENTERED 2ND FOR LOOP\n");
 
 			z[i] = -1;
 		}
-		cprintf("EXITED 2ND FOR LOOP\n");
+		//cprintf("EXITED 2ND FOR LOOP\n");
 
 
 		if( x[0] !=  -1)  					{is_correct = 0; cprintf("Reading/Writing of shared object is failed");}
@@ -105,7 +102,6 @@ _main(void)
 	}
 	if (is_correct)
 		eval += 40 ;
-	cprintf("\n%~Test of Shared Variables [Create] [1] completed. Eval = %d%%\n\n", eval);
 	cprintf("\n%~Test of Shared Variables [Create] [1] completed. Eval = %d%%\n\n", eval);
 
 

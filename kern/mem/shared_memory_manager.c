@@ -145,7 +145,6 @@ struct Share* get_share(int32 ownerID, char* name)
 			return current;
 		}
 	}
-
 	return NULL;
 
 }
@@ -160,11 +159,15 @@ int createSharedObject(int32 ownerID, char* shareName, uint32 size, uint8 isWrit
 	//panic("createSharedObject is not implemented yet");
 	//Your Code is Here...
 //	cprintf("\n entered createSharedObject\n \n");
-	struct Env* myenv = get_cpu_proc(); //The calling environment
 
+	struct Env* myenv = get_cpu_proc(); //The calling environment
+	acquire_spinlock(&AllShares.shareslock);
 	struct Share* found=get_share(ownerID,shareName);
+	release_spinlock(&AllShares.shareslock);
+
 	if(found!=NULL){
 //		cprintf("exited createSharedObject with the shared memory already exists \n");
+
 		return E_SHARED_MEM_EXISTS;
 	}
 
@@ -174,8 +177,6 @@ int createSharedObject(int32 ownerID, char* shareName, uint32 size, uint8 isWrit
 //		cprintf("exited createSharedObject at no memory to create shared object\n");
 		return E_NO_SHARE;
 	}
-
-	LIST_INSERT_TAIL(&AllShares.shares_list, sharedObject);
 
 	int noOfPagesNeeded=ROUNDUP(size, PAGE_SIZE)/PAGE_SIZE;
 
@@ -196,6 +197,9 @@ int createSharedObject(int32 ownerID, char* shareName, uint32 size, uint8 isWrit
 		}
 
 		x=map_frame(myenv->env_page_directory, ptr, (uint32)i, PERM_WRITEABLE);
+		pt_set_page_permissions(myenv->env_page_directory, (uint32)i,PERM_WRITEABLE,0);
+		pt_set_page_permissions(myenv->env_page_directory, (uint32)i,PERM_USER,0);
+
 
 		if(x==E_NO_MEM){
 			kfree(sharedObject);
@@ -212,10 +216,13 @@ int createSharedObject(int32 ownerID, char* shareName, uint32 size, uint8 isWrit
 		frameStorageIndex++;
 
 	}
-	//cprintf("is the sharedObject writeable? %d \n",sharedObject->isWritable);
+	acquire_spinlock(&AllShares.shareslock);
+	LIST_INSERT_TAIL(&AllShares.shares_list, sharedObject);
+	release_spinlock(&AllShares.shareslock);
+//	cprintf("is the sharedObject writeable? %d \n",sharedObject->isWritable);
 //	cprintf("exited createSharedObject normally\n");
-    ((uint32*)virtual_address)[0]=-1;
-    cprintf("share what is in that location: %d \n",((uint32*)virtual_address)[0]);
+//	((uint32*)virtual_address)[0]=-1;
+//		       cprintf("trial 1: %d \n", ((uint32*)virtual_address)[0]);
 
 	return sharedObject->ID;
 
@@ -234,10 +241,14 @@ int getSharedObject(int32 ownerID, char* shareName, void* virtual_address)
 	//Your Code is Here...
 
 	struct Env* myenv = get_cpu_proc(); //The calling environment
+	acquire_spinlock(&AllShares.shareslock);
+
 
 		struct Share* x= get_share(ownerID,shareName);
 
 			if(x!=NULL){
+				release_spinlock(&AllShares.shareslock);
+
 					return E_NO_SHARE ;
 				}
 	//		if(x->isWritable==0){
@@ -256,6 +267,8 @@ int getSharedObject(int32 ownerID, char* shareName, void* virtual_address)
 	    				 index2++;
 
 	    				 }
+	    				release_spinlock(&AllShares.shareslock);
+
 	    				return E_NO_MEM;
 	    					}
 
@@ -265,7 +278,7 @@ int getSharedObject(int32 ownerID, char* shareName, void* virtual_address)
 	    	 frames[i]->references++;
 	     }
 	     x->references++;
-
+			release_spinlock(&AllShares.shareslock);
 
 		 return x->ID;
 }
@@ -283,8 +296,10 @@ void free_share(struct Share* ptrShare)
 {
 	//TODO: [PROJECT'24.MS2 - BONUS#4] [4] SHARED MEMORY [KERNEL SIDE] - free_share()
 	//COMMENT THE FOLLOWING LINE BEFORE START CODING
-	panic("free_share is not implemented yet");
+	//panic("free_share is not implemented yet");
 	//Your Code is Here...
+	LIST_REMOVE(AllShares.shares_list, ptrShare);
+
 
 }
 //========================
