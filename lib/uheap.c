@@ -3,24 +3,24 @@
 //==================================================================================//
 //============================ REQUIRED FUNCTIONS ==================================//
 //==================================================================================//
-#define USER_HEAP_MAX_PAGES ((USER_HEAP_MAX - (USER_HEAP_START+ DYN_ALLOC_MAX_SIZE)) / PAGE_SIZE)
+#define USER_HEAP_MAX_PAGES ((USER_HEAP_MAX - (USER_HEAP_START+ DYN_ALLOC_MAX_SIZE+PAGE_SIZE)) / PAGE_SIZE)
 static uint8 userHeapBitmap[USER_HEAP_MAX_PAGES] = {0}; // Bitmap to track allocations
 
 int isAddressAllocated(uint32 address) {
-    uint32 pageIndex = ROUNDUP((address - USER_HEAP_START),PAGE_SIZE) / PAGE_SIZE;
+    uint32 pageIndex = ROUNDUP((address - (USER_HEAP_START+ DYN_ALLOC_MAX_SIZE+PAGE_SIZE)),PAGE_SIZE) / PAGE_SIZE;
     return userHeapBitmap[pageIndex];
 }
 
 void markAddressRangeAsAllocated(uint32 startAddress, int numOfPages) {
     for (int i = 0; i < numOfPages; i++) {
-        uint32 pageIndex = ROUNDUP((startAddress - USER_HEAP_START),PAGE_SIZE) / PAGE_SIZE + i;
+        uint32 pageIndex = ROUNDUP((startAddress - (USER_HEAP_START+ DYN_ALLOC_MAX_SIZE+PAGE_SIZE)),PAGE_SIZE) / PAGE_SIZE + i;
         userHeapBitmap[pageIndex] = 1;
     }
 }
 
 void markAddressRangeAsFree(uint32 startAddress, int numOfPages) {
     for (int i = 0; i < numOfPages; i++) {
-        uint32 pageIndex = (startAddress - USER_HEAP_START) / PAGE_SIZE + i;
+        uint32 pageIndex = (startAddress - (USER_HEAP_START+ DYN_ALLOC_MAX_SIZE+PAGE_SIZE))/ PAGE_SIZE + i;
         userHeapBitmap[pageIndex] = 0;
     }
 }
@@ -73,7 +73,7 @@ void* smalloc(char* sharedVarName, uint32 size, uint8 isWritable)
     //==============================================================
 
     // Check if the size exceeds the available heap space
-    if (size > (USER_HEAP_MAX - USER_HEAP_START)) {
+    if (size > (USER_HEAP_MAX - (USER_HEAP_START+ DYN_ALLOC_MAX_SIZE+PAGE_SIZE))) {
         return NULL;
     }
 
@@ -133,9 +133,10 @@ void* smalloc(char* sharedVarName, uint32 size, uint8 isWritable)
        	return NULL;
        }
        markAddressRangeAsAllocated(first_va_found, numOfPagesNeeded);
+//       ((uint32*)first_va_found)[0]=-1;
+//       cprintf("what is in that location: %d \n",((uint32*)first_va_found)[0]);
+       //cprintf("expected va: %d \n",first_va_found);
 
-
-       cprintf("the starting first_va_found: %d", first_va_found);
    	return (void*)first_va_found;
 }
 
@@ -147,8 +148,44 @@ void* sget(int32 ownerEnvID, char *sharedVarName)
 {
 	//TODO: [PROJECT'24.MS2 - #20] [4] SHARED MEMORY [USER SIDE] - sget()
 	// Write your code here, remove the panic and write your code
-	panic("sget() is not implemented yet...!!");
-	return NULL;
+	//panic("sget() is not implemented yet...!!");
+	int size= sys_getSizeOfSharedObject(ownerEnvID,sharedVarName);
+	if(size==E_SHARED_MEM_NOT_EXISTS){
+		return NULL;
+	}
+	uint32 first_va_found = USER_HEAP_START + DYN_ALLOC_MAX_SIZE + PAGE_SIZE; //UHS + 32MB + 4KB
+
+	    int numOfPagesNeeded = ROUNDUP(size, PAGE_SIZE) / PAGE_SIZE;
+	    int pagesCounter = 0;
+	    bool found = 0;
+
+
+	    while (first_va_found < USER_HEAP_MAX) {
+	        if (!isAddressAllocated(first_va_found)) {
+	            pagesCounter++;
+	            if (pagesCounter == numOfPagesNeeded) {
+	                // Calculate the start of the contiguous block
+	                first_va_found -= (numOfPagesNeeded - 1) * PAGE_SIZE;
+	                break;
+	            }
+	        } else {
+	            pagesCounter = 0; // Reset if the block is not contiguous
+	        }
+
+	        first_va_found += PAGE_SIZE;
+	    }
+	    if (pagesCounter < numOfPagesNeeded) {
+	               cprintf("Not enough contiguous space in kernel heap\n");
+	               return NULL;
+	           }
+	    int x=sys_getSharedObject(ownerEnvID,sharedVarName,(void*)first_va_found);
+	    if(x==E_NO_SHARE||x==E_NO_MEM){
+	           	return NULL;
+	     }
+	    markAddressRangeAsAllocated(first_va_found, numOfPagesNeeded);
+
+
+	return (void*)first_va_found;
 }
 
 

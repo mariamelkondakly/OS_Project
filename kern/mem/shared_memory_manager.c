@@ -68,20 +68,16 @@ inline struct FrameInfo** create_frames_storage(int numOfFrames)
 	//COMMENT THE FOLLOWING LINE BEFORE START CODING
 	//panic("create_frames_storage is not implemented yet");
 	//Your Code is Here...
-	cprintf("entered create_frames_storage\n");
 
 	struct FrameInfo** frames=(struct FrameInfo**)kmalloc(numOfFrames*sizeof(struct FrameInfo*));
-	cprintf("pointer of the frame storage: %p \n", frames);
 	for(int i=0; i<numOfFrames;i++){
 		frames[i]=NULL;
 	}
 
 	if(frames==NULL){
-		cprintf("exited create_frames_storage at frames =NULL\n");
 		panic("Failed to allocate memory for frames storage");
 		return NULL;
 	}
-	cprintf("exited create_frames_storage normally\n");
 	return (struct FrameInfo**)frames;
 
 }
@@ -98,12 +94,11 @@ struct Share* create_share(int32 ownerID, char* shareName, uint32 size, uint8 is
 	//COMMENT THE FOLLOWING LINE BEFORE START CODING
 	//panic("create_share is not implemented yet");
 	//Your Code is Here...
-	cprintf("entered create_share \n");
 
 
 	struct Share* shareObject=(struct Share*) kmalloc(size);
 	if (!shareObject) {
-		cprintf("exited create_share at shareObject =NULL\n");
+//		cprintf("exited create_share at shareObject =NULL\n");
 
 	        return NULL;  // Memory allocation failed
 	    }
@@ -112,7 +107,7 @@ struct Share* create_share(int32 ownerID, char* shareName, uint32 size, uint8 is
 
 	shareObject->framesStorage=create_frames_storage(ROUNDUP(size,PAGE_SIZE)/PAGE_SIZE);
 	if (!shareObject->framesStorage) {
-		cprintf("exited create_share at framesStorage =NULL\n");
+//		cprintf("exited create_share at framesStorage =NULL\n");
 		kfree(shareObject);
 		return NULL;
 	}
@@ -122,7 +117,7 @@ struct Share* create_share(int32 ownerID, char* shareName, uint32 size, uint8 is
 	shareObject->references=1;
 	shareObject->isWritable=isWritable;
 	shareObject->ID=maskedVA;
-	cprintf("exited create_share normally");
+//	cprintf("exited create_share normally");
 
 	return shareObject;
 
@@ -164,19 +159,19 @@ int createSharedObject(int32 ownerID, char* shareName, uint32 size, uint8 isWrit
 	//COMMENT THE FOLLOWING LINE BEFORE START CODING
 	//panic("createSharedObject is not implemented yet");
 	//Your Code is Here...
-	cprintf("\n entered createSharedObject\n \n");
+//	cprintf("\n entered createSharedObject\n \n");
 	struct Env* myenv = get_cpu_proc(); //The calling environment
 
 	struct Share* found=get_share(ownerID,shareName);
 	if(found!=NULL){
-		cprintf("exited createSharedObject with the shared memory already exists \n");
+//		cprintf("exited createSharedObject with the shared memory already exists \n");
 		return E_SHARED_MEM_EXISTS;
 	}
 
 	struct Share* sharedObject= create_share(ownerID, shareName,size,isWritable);
 
 	if(!sharedObject){
-		cprintf("exited createSharedObject at no memory to create shared object\n");
+//		cprintf("exited createSharedObject at no memory to create shared object\n");
 		return E_NO_SHARE;
 	}
 
@@ -217,7 +212,10 @@ int createSharedObject(int32 ownerID, char* shareName, uint32 size, uint8 isWrit
 		frameStorageIndex++;
 
 	}
-	cprintf("exited createSharedObject normally\n");
+	//cprintf("is the sharedObject writeable? %d \n",sharedObject->isWritable);
+//	cprintf("exited createSharedObject normally\n");
+    ((uint32*)virtual_address)[0]=-1;
+    cprintf("share what is in that location: %d \n",((uint32*)virtual_address)[0]);
 
 	return sharedObject->ID;
 

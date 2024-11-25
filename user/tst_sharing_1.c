@@ -39,9 +39,9 @@ _main(void)
 		expected = 1+1 ; /*1page +1table*/
 		int diff = (freeFrames - sys_calculate_free_frames());
 		if (diff < expected || diff > expected +1+1 /*extra 1 page & 1 table for sbrk (at max)*/) {is_correct = 0; cprintf("Wrong allocation (current=%d, expected=%d): make sure that you allocate the required space in the user environment and add its frames to frames_storage", freeFrames - sys_calculate_free_frames(), expected);}
-		cprintf(" \n expected va: %d \n",(uint32)pagealloc_start);
+		//cprintf(" \n expected va: %d \n",(uint32)pagealloc_start);
 		if (is_correct) eval += 20 ;
-		cprintf("\n EVALUATION: %d \n",eval);
+		//cprintf("\n EVALUATION: %d \n",eval);
 
 
 		is_correct = 1;
@@ -51,9 +51,10 @@ _main(void)
 		expected = 2 ; /*2pages*/
 		diff = (freeFrames - sys_calculate_free_frames());
 		if (diff < expected || diff > expected +1+1 /*extra 1 page & 1 table for sbrk (at max)*/) {is_correct = 0; cprintf("Wrong allocation (current=%d, expected=%d): make sure that you allocate the required space in the user environment and add its frames to frames_storage", freeFrames - sys_calculate_free_frames(), expected);}
-		cprintf("\n expected va: %d \n",(uint32)(pagealloc_start + 1 * PAGE_SIZE));
+		//cprintf("\n expected va: %d \n",(uint32)(pagealloc_start + 1 * PAGE_SIZE));
 		if (is_correct) eval += 20 ;
-		cprintf("\n EVALUATION: %d \n",eval);
+		//cprintf("\n EVALUATION: %d \n",eval);
+
 		is_correct = 1;
 		freeFrames = sys_calculate_free_frames() ;
 		y = smalloc("y", 4, 1);
@@ -61,7 +62,7 @@ _main(void)
 		expected = 1 ; /*1page*/
 		diff = (freeFrames - sys_calculate_free_frames());
 		if (diff < expected || diff > expected +1+1 /*extra 1 page & 1 table for sbrk (at max)*/) {is_correct = 0; cprintf("Wrong allocation (current=%d, expected=%d): make sure that you allocate the required space in the user environment and add its frames to frames_storage", freeFrames - sys_calculate_free_frames(), expected);}
-		cprintf(" \n expected va: %d \n",(uint32)(pagealloc_start + 3 * PAGE_SIZE));
+		//cprintf(" \n expected va: %d \n",(uint32)(pagealloc_start + 3 * PAGE_SIZE));
 		if (is_correct) eval += 20 ;
 		cprintf("\n EVALUATION: %d \n",eval);
 
@@ -74,15 +75,24 @@ _main(void)
 		int i=0;
 		for(;i<PAGE_SIZE/4;i++)
 		{
+			cprintf("BEFORE X[I] IN 1ST FOR LOOP\n");
 			x[i] = -1;
+			cprintf("AFTER X[I] IN 1ST FOR LOOP\n");
 			y[i] = -1;
+			cprintf("AFTER Y[I] IN 1ST FOR LOOP\n");
+
 		}
+		cprintf("EXITED 1ST FOR LOOP\n");
 
 		i=0;
 		for(;i<2*PAGE_SIZE/4;i++)
 		{
+			cprintf("ENTERED 2ND FOR LOOP\n");
+
 			z[i] = -1;
 		}
+		cprintf("EXITED 2ND FOR LOOP\n");
+
 
 		if( x[0] !=  -1)  					{is_correct = 0; cprintf("Reading/Writing of shared object is failed");}
 		if( x[PAGE_SIZE/4 - 1] !=  -1)  	{is_correct = 0; cprintf("Reading/Writing of shared object is failed");}
@@ -96,6 +106,8 @@ _main(void)
 	if (is_correct)
 		eval += 40 ;
 	cprintf("\n%~Test of Shared Variables [Create] [1] completed. Eval = %d%%\n\n", eval);
+	cprintf("\n%~Test of Shared Variables [Create] [1] completed. Eval = %d%%\n\n", eval);
+
 
 	return;
 }
