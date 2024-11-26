@@ -27,6 +27,14 @@ void markAddressRangeAsFree(uint32 startAddress, int numOfPages) {
 }
 
 
+#define U_ARR_SIZE ((USER_HEAP_MAX - USER_HEAP_START) / PAGE_SIZE)
+struct allocatedtogether{
+		uint32 size;
+		void* VA;
+};
+struct allocatedtogether Allpages[U_ARR_SIZE];
+
+
 //=============================================
 // [1] CHANGE THE BREAK LIMIT OF THE USER HEAP:
 //=============================================
@@ -50,45 +58,60 @@ void* malloc(uint32 size)
 //	panic("malloc() is not implemented yet...!!");
 	//cprintf("entered malloc with size %d \n ",size);
 
-	 if(size <= DYN_ALLOC_MAX_BLOCK_SIZE){
-			//cprintf("ms1 alloc \n");
-			void * ptr =alloc_block_FF(size);
-			//cprintf("5alasha ? \n");
-			if(ptr==NULL)
+	if(size <= DYN_ALLOC_MAX_BLOCK_SIZE){
+		//cprintf("ms1 alloc \n");
+		void * ptr = alloc_block_FF(size);
+		//cprintf("5alasha ? \n");
+
+		if(ptr==NULL)
 			return NULL;
-			return ptr;
-			}
-		 uint32 start_page_alloc = myEnv->hard_limit+PAGE_SIZE;
-		 uint32 first_va_found = myEnv->hard_limit+PAGE_SIZE;
-		 int no_Of_required_pages = ROUNDUP(size, PAGE_SIZE) / PAGE_SIZE;
 
-		 int pagesCounter = 0;
+		return ptr;
+	}
 
-		 bool found = 0;
-		 // Find contiguous free pages
-		 int alloc =0;
-		 while(first_va_found<USER_HEAP_MAX){
-			 alloc =isAddressAllocated(first_va_found);
-			 if(alloc ==1){
-				 pagesCounter = 0;
-				 first_va_found+=PAGE_SIZE;
-				 continue;
-			 }
-			 pagesCounter++;
-			 if(pagesCounter==no_Of_required_pages){
-			 	first_va_found -= (no_Of_required_pages - 1) * PAGE_SIZE;
-			 	break;
-			 }
-			 first_va_found +=PAGE_SIZE;
-		 }
+	uint32 start_page_alloc = myEnv->hard_limit+PAGE_SIZE;
+	uint32 first_va_found = myEnv->hard_limit+PAGE_SIZE;
+	int no_Of_required_pages = ROUNDUP(size, PAGE_SIZE) / PAGE_SIZE;
 
-		 if (pagesCounter < no_Of_required_pages) {
-			 cprintf("Not enough contiguous space in User heap\n");
-			 return NULL;
-		 }
-		 markAddressRangeAsAllocated(first_va_found, no_Of_required_pages);
-		 sys_allocate_user_mem(first_va_found,size);
-		 return (void*)first_va_found;
+	int pagesCounter = 0;
+	bool found = 0;
+
+	// Find contiguous free pages
+	int alloc = 0;
+	while(first_va_found<USER_HEAP_MAX){
+		alloc = isAddressAllocated(first_va_found);
+		if(alloc == 1){
+			pagesCounter = 0;
+			first_va_found+=PAGE_SIZE;
+			continue;
+		}
+
+		pagesCounter++;
+
+		if(pagesCounter==no_Of_required_pages){
+			first_va_found -= (no_Of_required_pages - 1) * PAGE_SIZE;
+			break;
+		}
+
+		first_va_found +=PAGE_SIZE;
+	}
+
+	if (pagesCounter < no_Of_required_pages) {
+		cprintf("Not enough contiguous space in User heap\n");
+		return NULL;
+	}
+
+	for(int i=0;i<U_ARR_SIZE;i++){
+		if(Allpages[i].VA==NULL){
+			Allpages[i].VA = (void*)first_va_found;
+			Allpages[i].size = size;
+			break;
+		}
+	}
+
+	markAddressRangeAsAllocated(first_va_found, no_Of_required_pages);
+	sys_allocate_user_mem(first_va_found,size);
+	return (void*)first_va_found;
 
 	//return NULL;
 	//Use sys_isUHeapPlacementStrategyFIRSTFIT() and	sys_isUHeapPlacementStrategyBESTFIT()
@@ -103,7 +126,58 @@ void free(void* virtual_address)
 {
 	//TODO: [PROJECT'24.MS2 - #14] [3] USER HEAP [USER SIDE] - free()
 	// Write your code here, remove the panic and write your code
-	panic("free() is not implemented yet...!!");
+	//panic("free() is not implemented yet...!!");
+
+	if((uint32)virtual_address>=USER_HEAP_START && (uint32)virtual_address<=(myEnv->Break)){
+		free_block(virtual_address);
+	}
+
+	else if((uint32)virtual_address>=(myEnv->hard_limit)+PAGE_SIZE && (uint32)virtual_address<USER_HEAP_MAX){
+
+//		struct allocatedtogether* my_pages = NULL;
+//		for(int i=0;i<U_ARR_SIZE;i++){
+//			if(Allpages[i].VA!=NULL && Allpages[i].VA==virtual_address)
+//			{
+//				my_pages = (struct allocatedtogether*)&(Allpages[i]);
+//				Allpages[i].VA = NULL;
+//				my_pages->size=0;
+//				break;
+//			}
+//		}
+//		if(my_pages!= NULL) {
+//			sys_free_user_mem((uint32)virtual_address,my_pages->size);
+//		}
+
+		uint32 VA;
+		int size;
+
+		for(int i=0;i<U_ARR_SIZE;i++){
+
+//			cprintf("VA: %d\n", Allpages[i].VA);
+//			cprintf("size: %d\n\n\n", Allpages[i].size);
+
+			if(Allpages[i].VA==(uint32*)virtual_address){
+
+				size = Allpages[i].size;
+
+				Allpages[i].VA = NULL;
+				Allpages[i].size = 0;
+				break;
+			}
+
+		}
+
+		int no_Of_required_pages = ROUNDUP(size, PAGE_SIZE) / PAGE_SIZE;
+		VA = (uint32) virtual_address;
+
+		markAddressRangeAsFree(VA, no_Of_required_pages);
+		sys_free_user_mem(VA,size);
+	}
+
+	else{
+		panic("Invalid Address \n");
+		return;
+	}
 }
 
 

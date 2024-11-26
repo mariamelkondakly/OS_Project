@@ -193,32 +193,32 @@ void allocate_user_mem(struct Env* e, uint32 virtual_address, uint32 size)
 	// Write your code here, remove the panic and write your code
 //	panic("allocate_user_mem() is not implemented yet...!!");
 
-		if( virtual_address >= USER_HEAP_START && virtual_address < USER_HEAP_MAX ){
-			int marked_bit = (1<<10);
-			cprintf("marked bit is %d \n , ",marked_bit);
+	if( virtual_address >= USER_HEAP_START && virtual_address < USER_HEAP_MAX ){
+
+		int marked_bit = (1<<10);
+		cprintf("marked bit is %d \n , ",marked_bit);
 
 
-			uint32 nopages = ROUNDUP(size, PAGE_SIZE) / PAGE_SIZE ;
-			for (uint32 i=0; i< nopages ;i++){
+		uint32 nopages = ROUNDUP(size, PAGE_SIZE) / PAGE_SIZE ;
+		for (uint32 i=0; i< nopages ;i++){
 
-				uint32* pageTable = NULL;
-				int tableExist = get_page_table(e->env_page_directory,virtual_address+i*PAGE_SIZE,&pageTable);
+			uint32* pageTable = NULL;
+			int tableExist = get_page_table(e->env_page_directory,virtual_address+i*PAGE_SIZE,&pageTable);
 
-				uint32* createdPageTable = NULL;
-				if(tableExist == TABLE_NOT_EXIST){
-					createdPageTable = create_page_table(e->env_page_directory, virtual_address+i*PAGE_SIZE);
-				}
+			uint32* createdPageTable = NULL;
+			if(tableExist == TABLE_NOT_EXIST){
+				createdPageTable = create_page_table(e->env_page_directory, virtual_address+i*PAGE_SIZE);
+			}
 
-
-				if(pageTable != NULL || createdPageTable != NULL){
-					pt_set_page_permissions(e->env_page_directory, virtual_address+i*PAGE_SIZE, 0x400,0);
-				}
+			if(pageTable != NULL || createdPageTable != NULL){
+				pt_set_page_permissions(e->env_page_directory, virtual_address+i*PAGE_SIZE, 0x400,0);
 			}
 		}
-		else{
-			// terminate
-			return;
-		}
+	}
+	else{
+		// terminate
+		return;
+	}
 
 }
 
@@ -235,8 +235,35 @@ void free_user_mem(struct Env* e, uint32 virtual_address, uint32 size)
 
 	//TODO: [PROJECT'24.MS2 - #15] [3] USER HEAP [KERNEL SIDE] - free_user_mem
 	// Write your code here, remove the panic and write your code
-	panic("free_user_mem() is not implemented yet...!!");
+//	panic("free_user_mem() is not implemented yet...!!");
 
+
+	if( virtual_address >= USER_HEAP_START && virtual_address < USER_HEAP_MAX ){
+
+		uint32 nopages = ROUNDUP(size, PAGE_SIZE) / PAGE_SIZE ;
+
+		for (uint32 i=0; i< nopages ;i++){
+
+			uint32* pageTable = NULL;
+			int tableExist = get_page_table(e->env_page_directory,virtual_address+i*PAGE_SIZE,&pageTable);
+
+			if(pageTable != NULL){
+				pt_set_page_permissions(e->env_page_directory, virtual_address+i*PAGE_SIZE,0 ,0x400);
+
+				// free all pages from page file   (from appendix)
+				pf_remove_env_page(e, virtual_address+i*PAGE_SIZE);
+
+				// free from working set  (from appendix): Flush certain Virtual Address from Working Set
+				// Search for the given virtual address inside the working set of “e” and, if found, removes its entry.
+				env_page_ws_invalidate(e, virtual_address+i*PAGE_SIZE);
+
+			}
+		}
+	}
+	else{
+		// terminate
+		return;
+	}
 
 	//TODO: [PROJECT'24.MS2 - BONUS#3] [3] USER HEAP [KERNEL SIDE] - O(1) free_user_mem
 }
