@@ -188,6 +188,7 @@ void *alloc_block_FF(uint32 size)
 	//COMMENT THE FOLLOWING LINE BEFORE START CODING
 	//panic("alloc_block_FF is not implemented yet");
 	//Your Code is Here...
+	//cprintf("da5al block alloc \n");
 	int total_size = (int)size + 8; // Adjust for metadata
 
 	    if (total_size < 16) {
@@ -243,6 +244,7 @@ void *alloc_block_FF(uint32 size)
 
 							    free_block((uint32*)sbrkReturn);
 								cprintf("after freeing! \n \n");
+
 				return alloc_block_FF(size);
 
 
