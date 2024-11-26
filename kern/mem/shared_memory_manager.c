@@ -96,7 +96,7 @@ struct Share* create_share(int32 ownerID, char* shareName, uint32 size, uint8 is
 	//Your Code is Here...
 
 
-	struct Share* shareObject=(struct Share*) kmalloc(size);
+	struct Share* shareObject=(struct Share*) kmalloc(sizeof(struct Share));
 	if (!shareObject) {
 //		cprintf("exited create_share at shareObject =NULL\n");
 
@@ -117,6 +117,8 @@ struct Share* create_share(int32 ownerID, char* shareName, uint32 size, uint8 is
 	shareObject->references=1;
 	shareObject->isWritable=isWritable;
 	shareObject->ID=maskedVA;
+	shareObject->size=size;
+
 //	cprintf("exited create_share normally");
 
 	return shareObject;
@@ -138,10 +140,17 @@ struct Share* get_share(int32 ownerID, char* name)
 	//Your Code is Here...
 
 	struct Share* current;
+	int i=1;
 	LIST_FOREACH(current,&(AllShares.shares_list)){
 
-		if(!(strncmp(name, current->name, strlen(name)))&&current->ownerID==ownerID){
+//		cprintf("%d share's name: %s, share's ownerId: %d \n", i,current->name,current->ownerID);
+		i++;
+		bool isFound=!(strncmp(name, current->name, strlen(name)))&&current->ownerID==ownerID;
+//		cprintf("is found = %d \n",isFound);
+		//cprintf("current: %d \n", (uint32)current);
 
+		if(isFound){
+//			cprintf("current: %d \n", (uint32)current);
 			return current;
 		}
 	}
@@ -216,6 +225,7 @@ int createSharedObject(int32 ownerID, char* shareName, uint32 size, uint8 isWrit
 		frameStorageIndex++;
 
 	}
+//	cprintf("frame storage hold %d in creation \n", frameStorageIndex);
 	acquire_spinlock(&AllShares.shareslock);
 	LIST_INSERT_TAIL(&AllShares.shares_list, sharedObject);
 	release_spinlock(&AllShares.shareslock);
@@ -235,30 +245,38 @@ int createSharedObject(int32 ownerID, char* shareName, uint32 size, uint8 isWrit
 //======================
 int getSharedObject(int32 ownerID, char* shareName, void* virtual_address)
 {
+	//cprintf("entered getSharedObject! \n");
 	//TODO: [PROJECT'24.MS2 - #21] [4] SHARED MEMORY [KERNEL SIDE] - getSharedObject()
 	//COMMENT THE FOLLOWING LINE BEFORE START CODING
 	//panic("getSharedObject is not implemented yet");
 	//Your Code is Here...
 
 	struct Env* myenv = get_cpu_proc(); //The calling environment
-	acquire_spinlock(&AllShares.shareslock);
 
+	//cprintf("before the lock! \n");
 
+	    acquire_spinlock(&AllShares.shareslock);
 		struct Share* x= get_share(ownerID,shareName);
+		release_spinlock(&AllShares.shareslock);
+		//cprintf("after the lock! share found at: %d \n",(uint32) x);
 
-			if(x!=NULL){
-				release_spinlock(&AllShares.shareslock);
+
+
+			if(x==NULL){
+				//cprintf("exited with the share not found \n");
 
 					return E_NO_SHARE ;
 				}
-	//		if(x->isWritable==0){
-	//			 int perm=PERM_WRITEABLE
-	//		}
 			struct FrameInfo** frames =x->framesStorage;
 			int index=0;
+	    	 //cprintf("starting to map! \n");
+
 	     while(frames[index]!=NULL){
+	    	 //cprintf("we're mapping! \n");
 
 	    	 int ret=map_frame(myenv->env_page_directory, frames[index], (uint32)virtual_address+(index*PAGE_SIZE),PERM_WRITEABLE*x->isWritable );
+	 		pt_set_page_permissions(myenv->env_page_directory, (uint32)virtual_address+(index*PAGE_SIZE),PERM_USER,0);
+	 		//cprintf("just mapped with result %d \n", ret);
 
 	    			if(ret==E_NO_MEM){
 	    				 int index2=0;
@@ -267,19 +285,19 @@ int getSharedObject(int32 ownerID, char* shareName, void* virtual_address)
 	    				 index2++;
 
 	    				 }
-	    				release_spinlock(&AllShares.shareslock);
+	    				//cprintf("exited with no memory found for mapping\n");
 
 	    				return E_NO_MEM;
 	    					}
 
 	    index++ ;
 	     }
-	     for (int i ; i <index;i++){
+	     for (int i=0 ; i <index;i++){
 	    	 frames[i]->references++;
+
 	     }
 	     x->references++;
-			release_spinlock(&AllShares.shareslock);
-
+	     //cprintf("EXITING GETSHAREDOBJECT NORMALLY!\n");
 		 return x->ID;
 }
 
@@ -298,7 +316,7 @@ void free_share(struct Share* ptrShare)
 	//COMMENT THE FOLLOWING LINE BEFORE START CODING
 	//panic("free_share is not implemented yet");
 	//Your Code is Here...
-	LIST_REMOVE(AllShares.shares_list, ptrShare);
+	//LIST_REMOVE(AllShares.shares_list, ptrShare);
 
 
 }

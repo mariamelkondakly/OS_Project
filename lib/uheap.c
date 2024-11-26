@@ -145,17 +145,19 @@ void* smalloc(char* sharedVarName, uint32 size, uint8 isWritable)
 //========================================
 // [5] SHARE ON ALLOCATED SHARED VARIABLE:
 //========================================
-void* sget(int32 ownerEnvID, char *sharedVarName)
-{
+void* sget(int32 ownerEnvID, char *sharedVarName){
+	//cprintf("entered sget! \n");
+	//cprintf("ownerEnvId: %d, sharedVarName: %s \n", ownerEnvID, sharedVarName);
 	//TODO: [PROJECT'24.MS2 - #20] [4] SHARED MEMORY [USER SIDE] - sget()
 	// Write your code here, remove the panic and write your code
 	//panic("sget() is not implemented yet...!!");
 	int size= sys_getSizeOfSharedObject(ownerEnvID,sharedVarName);
 	if(size==E_SHARED_MEM_NOT_EXISTS){
+		//cprintf("sget exited at E_SHARED_MEM_NOT_EXISTS \n");
 		return NULL;
 	}
 	uint32 first_va_found = USER_HEAP_START + DYN_ALLOC_MAX_SIZE + PAGE_SIZE; //UHS + 32MB + 4KB
-
+	//cprintf("set the first_va_found first place %d \n", first_va_found);
 	    int numOfPagesNeeded = ROUNDUP(size, PAGE_SIZE) / PAGE_SIZE;
 	    int pagesCounter = 0;
 	    bool found = 0;
@@ -175,17 +177,26 @@ void* sget(int32 ownerEnvID, char *sharedVarName)
 
 	        first_va_found += PAGE_SIZE;
 	    }
+		//cprintf("the first_va_found found %d \n", first_va_found);
+
 	    if (pagesCounter < numOfPagesNeeded) {
 	               cprintf("Not enough contiguous space in kernel heap\n");
 	               return NULL;
 	           }
+        //cprintf("before calling getSharedObject\n");
+
 	    int x=sys_getSharedObject(ownerEnvID,sharedVarName,(void*)first_va_found);
+        //cprintf("after calling getSharedObject\n");
+
 	    if(x==E_NO_SHARE||x==E_NO_MEM){
+            cprintf("get shared object being mean\n");
+
 	           	return NULL;
 	     }
+
 	    markAddressRangeAsAllocated(first_va_found, numOfPagesNeeded);
 
-
+	    //cprintf("here is the virtual address returned: %d \n", (uint32)first_va_found);
 	return (void*)first_va_found;
 }
 
