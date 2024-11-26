@@ -240,10 +240,10 @@ void *alloc_block_FF(uint32 size)
 		*END=1;
 
 		set_block_data((uint32*)sbrkReturn,finalSize,1);
-						cprintf("after setting! \n \n");
+						//cprintf("after setting! \n \n");
 
 							    free_block((uint32*)sbrkReturn);
-								cprintf("after freeing! \n \n");
+								//cprintf("after freeing! \n \n");
 
 				return alloc_block_FF(size);
 
@@ -331,10 +331,10 @@ if (size == 0) {
 			*END=1;
 
 			set_block_data((uint32*)sbrkReturn,finalSize,1);
-							cprintf("after setting! \n \n");
+							//cprintf("after setting! \n \n");
 
 								    free_block((uint32*)sbrkReturn);
-									cprintf("after freeing! \n \n");
+									//cprintf("after freeing! \n \n");
 					return alloc_block_FF(size);
 
 
@@ -392,7 +392,7 @@ void free_block(void *va)
 
 		}
 		else if((is_free_block(prevVa)==1)){
-			cprintf("when the prev is free");
+			//cprintf("when the prev is free");
 			uint32 totalNewBlockSize =  prevSize + blockSize;
 
 		    newBlock =(struct BlockElement*)prevVa;
