@@ -18,7 +18,7 @@ _main(void)
 	/*=================================================*/
 
 	uint32 pagealloc_start = USER_HEAP_START + DYN_ALLOC_MAX_SIZE + PAGE_SIZE; //UHS + 32MB + 4KB
-
+	//cprintf("SLAVE ENTERED \n");
 	uint32 *x,*y,*z, *expectedVA;
 	int freeFrames, diff, expected;
 	int32 parentenvID = sys_getparentenvid();
@@ -27,8 +27,11 @@ _main(void)
 	//sys_lock_cons();
 	sys_lock_cons();
 	{
+		//cprintf("sys_lock_cons 1 entered! \n");
 		freeFrames = sys_calculate_free_frames() ;
 		z = sget(parentenvID,"z");
+		//cprintf("sget z called \n");
+		//cprintf(" in slave 1 z's virtual address: %d its parent env id: %d \n", (uint32) z, parentenvID);
 		expectedVA = (uint32*)(pagealloc_start + 0 * PAGE_SIZE);
 		if (z != expectedVA) panic("Get(): Returned address is not correct. Expected = %x, Actual = %x\nMake sure that you align the allocation on 4KB boundary", expectedVA, z);
 		expected = 1 ; /*1table*/
@@ -43,6 +46,8 @@ _main(void)
 	{
 		freeFrames = sys_calculate_free_frames() ;
 		y = sget(parentenvID,"y");
+		//cprintf(" in slave 1 y's virtual address: %d its parent env id: %d \n", (uint32) y, parentenvID);
+
 		expectedVA = (uint32*)(pagealloc_start + 1 * PAGE_SIZE);
 		if (y != expectedVA) panic("Get(): Returned address is not correct. Expected = %x, Actual = %x\nMake sure that you align the allocation on 4KB boundary", expectedVA, y);
 		expected = 0 ;
@@ -59,6 +64,8 @@ _main(void)
 	{
 		freeFrames = sys_calculate_free_frames() ;
 		x = sget(parentenvID,"x");
+		//cprintf(" in slave 1 x's virtual address: %d its parent env id: %d \n", (uint32) x, parentenvID);
+
 		expectedVA = (uint32*)(pagealloc_start + 2 * PAGE_SIZE);
 		if (x != expectedVA) panic("Get(): Returned address is not correct. Expected = %x, Actual = %x\nMake sure that you align the allocation on 4KB boundary", expectedVA, x);
 		expected = 0 ;
@@ -75,6 +82,7 @@ _main(void)
 
 	//To indicate that it's completed successfully
 	inctst();
+	//cprintf("SLAVE EXITED \n");
 
 	return;
 }
