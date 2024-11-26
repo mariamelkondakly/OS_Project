@@ -58,6 +58,7 @@ void _main(void)
 	/*INITIAL ALLOC Scenario 1: Try to allocate set of blocks with different sizes*/
 	cprintf("%~\n1: [BLOCK ALLOCATOR] allocate set of blocks with different sizes [all should fit] [30%]\n") ;
 	{
+		//cprintf("ehhhhhhhhhh\n");
 		is_correct = 1;
 		void* curVA = (void*) USER_HEAP_START + sizeof(int) /*BEG Block*/ ;
 		curTotalSize = sizeof(int);
@@ -65,6 +66,7 @@ void _main(void)
 		{
 			for (int j = 0; j < allocCntPerSize; ++j)
 			{
+				//cprintf("loop? \n");
 				actualSize = allocSizes[i] - sizeOfMetaData;
 				va = startVAs[idx] = malloc(actualSize);
 				midVAs[idx] = va + actualSize/2 ;

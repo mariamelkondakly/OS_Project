@@ -12,6 +12,8 @@
 #include "memory_manager.h"
 #include <inc/queue.h>
 
+
+
 //extern void inctst();
 
 /******************************/
@@ -154,8 +156,24 @@ void* sys_sbrk(int numOfPages)
 	}
 	uint32 prevBreak= env->Break;
 	env->Break+=sizeNeeded;
-	uint32* END=(uint32*)(prevBreak-4);
-	*END=1;
+//	uint32* END=(uint32*)(prevBreak-4);
+//	*END=1;
+	for(int i=0;i<numOfPages;i++){
+		//pt_set_page_permissions(env->env_page_directory,prevBreak+i*PAGE_SIZE, 0x400,0);
+		uint32* pageTable = NULL;
+		int tableExist = get_page_table(env->env_page_directory,prevBreak+i*PAGE_SIZE,&pageTable);
+
+		uint32* createdPageTable = NULL;
+		if(tableExist == TABLE_NOT_EXIST){
+			createdPageTable = create_page_table(env->env_page_directory,prevBreak+i*PAGE_SIZE);
+		}
+
+
+		if(pageTable != NULL || createdPageTable != NULL){
+			pt_set_page_permissions(env->env_page_directory,prevBreak+i*PAGE_SIZE, 0x400,0);
+			//pageTable[PTX(prevBreak+i*PAGE_SIZE)]=pageTable[PTX(prevBreak+i*PAGE_SIZE)] | PERM_AVAILABLE;
+		}
+	}
 	return (void*)prevBreak;
 
 }
@@ -173,7 +191,35 @@ void allocate_user_mem(struct Env* e, uint32 virtual_address, uint32 size)
 
 	//TODO: [PROJECT'24.MS2 - #13] [3] USER HEAP [KERNEL SIDE] - allocate_user_mem()
 	// Write your code here, remove the panic and write your code
-	panic("allocate_user_mem() is not implemented yet...!!");
+//	panic("allocate_user_mem() is not implemented yet...!!");
+
+		if( virtual_address >= USER_HEAP_START && virtual_address < USER_HEAP_MAX ){
+			int marked_bit = (1<<10);
+			cprintf("marked bit is %d \n , ",marked_bit);
+
+
+			uint32 nopages = ROUNDUP(size, PAGE_SIZE) / PAGE_SIZE ;
+			for (uint32 i=0; i< nopages ;i++){
+
+				uint32* pageTable = NULL;
+				int tableExist = get_page_table(e->env_page_directory,virtual_address+i*PAGE_SIZE,&pageTable);
+
+				uint32* createdPageTable = NULL;
+				if(tableExist == TABLE_NOT_EXIST){
+					createdPageTable = create_page_table(e->env_page_directory, virtual_address+i*PAGE_SIZE);
+				}
+
+
+				if(pageTable != NULL || createdPageTable != NULL){
+					pt_set_page_permissions(e->env_page_directory, virtual_address+i*PAGE_SIZE, 0x400,0);
+				}
+			}
+		}
+		else{
+			// terminate
+			return;
+		}
+
 }
 
 //=====================================

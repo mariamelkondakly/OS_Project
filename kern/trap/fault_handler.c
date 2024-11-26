@@ -151,22 +151,20 @@ void fault_handler(struct Trapframe *tf)
 									//TODO: [PROJECT'24.MS2 - #08] [2] FAULT HANDLER I - Check for invalid pointers
 									//(e.g. pointing to unmarked user heap page, kernel or wrong access rights),
 									//your code is here
-									// cprintf("Entered checking for invalid pointers\n");
+									 //cprintf("Entered checking for invalid pointers\n");
+			 uint32 page_perm = pt_get_page_permissions(faulted_env->env_page_directory,fault_va);
 
-									 uint32 page_perm = pt_get_page_permissions(faulted_env->env_page_directory,fault_va);
-
-									 int MarkedBit=(page_perm &(1<<10));
-									if(fault_va >= USER_HEAP_START && fault_va < USER_HEAP_MAX && MarkedBit==0){
-									 env_exit();
-									}
-									if(fault_va >USER_LIMIT)
-									{
-									env_exit();
-									}
-									if(!(page_perm & PERM_WRITEABLE)&&(page_perm & PERM_PRESENT)){
-								    env_exit();
-								    }
-
+												 int MarkedBit=(page_perm &(1<<10));
+												if(fault_va >= USER_HEAP_START && fault_va < USER_HEAP_MAX && MarkedBit==0){
+												 env_exit();
+												}
+												if(fault_va >USER_LIMIT)
+												{
+												env_exit();
+												}
+												if(!(page_perm & PERM_WRITEABLE)&&(page_perm & PERM_PRESENT)){
+											    env_exit();
+											    }
 			/*============================================================================================*/
 		}
 
@@ -243,6 +241,7 @@ void page_fault_handler(struct Env * faulted_env, uint32 fault_va)
 										//TODO: [PROJECT'24.MS2 - #09] [2] FAULT HANDLER I - Placement
 										// Write your code here, remove the panic and write your code
 										//panic("page_fault_handler().PLACEMENT is not implemented yet...!!");
+			//cprintf("da5al placement \n");
 
 										int existsInDisk=0;
 										struct FrameInfo *frame=NULL;
@@ -259,7 +258,7 @@ void page_fault_handler(struct Env * faulted_env, uint32 fault_va)
 										}
 										int ret = pf_read_env_page(faulted_env,(void*)fault_va);
 										if(ret== E_PAGE_NOT_EXIST_IN_PF){
-											if(((fault_va>=USER_HEAP_START&&fault_va<USER_HEAP_MAX)||(fault_va>=USTACKBOTTOM&&fault_va<USTACKTOP)))
+											if(((fault_va>=USER_HEAP_START&&fault_va<=USER_HEAP_MAX)||(fault_va>=USTACKBOTTOM&&fault_va<=USTACKTOP)))
 											{
 												//add the page in the working set list & update its last one
 											struct WorkingSetElement* FaultedElement = env_page_ws_list_create_element(faulted_env,fault_va);
@@ -275,6 +274,8 @@ void page_fault_handler(struct Env * faulted_env, uint32 fault_va)
 											}
 											else{
 											unmap_frame(faulted_env->env_page_directory,fault_va);
+											//free_frame(frame);
+											cprintf("baraaa 3shan mesh stack aw heap \n");
 											env_exit();
 											}
 

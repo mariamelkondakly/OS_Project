@@ -4,6 +4,29 @@
 //============================ REQUIRED FUNCTIONS ==================================//
 //==================================================================================//
 
+#define USER_HEAP_MAX_PAGES ((USER_HEAP_MAX - (USER_HEAP_START+ DYN_ALLOC_MAX_SIZE+PAGE_SIZE)) / PAGE_SIZE)
+static uint8 userHeapBitmap[USER_HEAP_MAX_PAGES] = {0}; // Bitmap to track allocations
+
+int isAddressAllocated(uint32 address) {
+    uint32 pageIndex = ROUNDUP((address - (USER_HEAP_START+ DYN_ALLOC_MAX_SIZE+PAGE_SIZE)),PAGE_SIZE) / PAGE_SIZE;
+    return userHeapBitmap[pageIndex];
+}
+
+void markAddressRangeAsAllocated(uint32 startAddress, int numOfPages) {
+    for (int i = 0; i < numOfPages; i++) {
+        uint32 pageIndex = ROUNDUP((startAddress - (USER_HEAP_START+ DYN_ALLOC_MAX_SIZE+PAGE_SIZE)),PAGE_SIZE) / PAGE_SIZE + i;
+        userHeapBitmap[pageIndex] = 1;
+    }
+}
+
+void markAddressRangeAsFree(uint32 startAddress, int numOfPages) {
+    for (int i = 0; i < numOfPages; i++) {
+        uint32 pageIndex = (startAddress - (USER_HEAP_START+ DYN_ALLOC_MAX_SIZE+PAGE_SIZE))/ PAGE_SIZE + i;
+        userHeapBitmap[pageIndex] = 0;
+    }
+}
+
+
 //=============================================
 // [1] CHANGE THE BREAK LIMIT OF THE USER HEAP:
 //=============================================
@@ -24,8 +47,50 @@ void* malloc(uint32 size)
 	//==============================================================
 	//TODO: [PROJECT'24.MS2 - #12] [3] USER HEAP [USER SIDE] - malloc()
 	// Write your code here, remove the panic and write your code
-	panic("malloc() is not implemented yet...!!");
-	return NULL;
+//	panic("malloc() is not implemented yet...!!");
+	//cprintf("entered malloc with size %d \n ",size);
+
+	 if(size <= DYN_ALLOC_MAX_BLOCK_SIZE){
+			//cprintf("ms1 alloc \n");
+			void * ptr =alloc_block_FF(size);
+			//cprintf("5alasha ? \n");
+			if(ptr==NULL)
+			return NULL;
+			return ptr;
+			}
+		 uint32 start_page_alloc = myEnv->hard_limit+PAGE_SIZE;
+		 uint32 first_va_found = myEnv->hard_limit+PAGE_SIZE;
+		 int no_Of_required_pages = ROUNDUP(size, PAGE_SIZE) / PAGE_SIZE;
+
+		 int pagesCounter = 0;
+
+		 bool found = 0;
+		 // Find contiguous free pages
+		 int alloc =0;
+		 while(first_va_found<USER_HEAP_MAX){
+			 alloc =isAddressAllocated(first_va_found);
+			 if(alloc ==1){
+				 pagesCounter = 0;
+				 first_va_found+=PAGE_SIZE;
+				 continue;
+			 }
+			 pagesCounter++;
+			 if(pagesCounter==no_Of_required_pages){
+			 	first_va_found -= (no_Of_required_pages - 1) * PAGE_SIZE;
+			 	break;
+			 }
+			 first_va_found +=PAGE_SIZE;
+		 }
+
+		 if (pagesCounter < no_Of_required_pages) {
+			 cprintf("Not enough contiguous space in User heap\n");
+			 return NULL;
+		 }
+		 markAddressRangeAsAllocated(first_va_found, no_Of_required_pages);
+		 sys_allocate_user_mem(first_va_found,size);
+		 return (void*)first_va_found;
+
+	//return NULL;
 	//Use sys_isUHeapPlacementStrategyFIRSTFIT() and	sys_isUHeapPlacementStrategyBESTFIT()
 	//to check the current strategy
 
