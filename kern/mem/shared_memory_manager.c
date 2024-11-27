@@ -68,8 +68,8 @@ inline struct FrameInfo** create_frames_storage(int numOfFrames)
 	//COMMENT THE FOLLOWING LINE BEFORE START CODING
 	//panic("create_frames_storage is not implemented yet");
 	//Your Code is Here...
+
 	struct FrameInfo** frames=(struct FrameInfo**)kmalloc(numOfFrames*sizeof(struct FrameInfo*));
-	cprintf("pointer of the frame storage: %p \n", frames);
 	for(int i=0; i<numOfFrames;i++){
 		frames[i]=NULL;
 	}
@@ -78,7 +78,6 @@ inline struct FrameInfo** create_frames_storage(int numOfFrames)
 		panic("Failed to allocate memory for frames storage");
 		return NULL;
 	}
-
 	return (struct FrameInfo**)frames;
 
 }
@@ -97,8 +96,10 @@ struct Share* create_share(int32 ownerID, char* shareName, uint32 size, uint8 is
 	//Your Code is Here...
 
 
-	struct Share* shareObject=(struct Share*) kmalloc(size);
+	struct Share* shareObject=(struct Share*) kmalloc(sizeof(struct Share));
 	if (!shareObject) {
+//		cprintf("exited create_share at shareObject =NULL\n");
+
 	        return NULL;  // Memory allocation failed
 	    }
 	uint32 mask = 0x7FFFFFFF;
@@ -106,6 +107,7 @@ struct Share* create_share(int32 ownerID, char* shareName, uint32 size, uint8 is
 
 	shareObject->framesStorage=create_frames_storage(ROUNDUP(size,PAGE_SIZE)/PAGE_SIZE);
 	if (!shareObject->framesStorage) {
+//		cprintf("exited create_share at framesStorage =NULL\n");
 		kfree(shareObject);
 		return NULL;
 	}
@@ -115,6 +117,10 @@ struct Share* create_share(int32 ownerID, char* shareName, uint32 size, uint8 is
 	shareObject->references=1;
 	shareObject->isWritable=isWritable;
 	shareObject->ID=maskedVA;
+	shareObject->size=size;
+
+//	cprintf("exited create_share normally");
+
 	return shareObject;
 
 }
@@ -132,13 +138,22 @@ struct Share* get_share(int32 ownerID, char* name)
 	//COMMENT THE FOLLOWING LINE BEFORE START CODING
 	//panic("get_share is not implemented yet");
 	//Your Code is Here...
+
 	struct Share* current;
+	int i=1;
 	LIST_FOREACH(current,&(AllShares.shares_list)){
-		if((strncmp(name, current->name, strlen(name)))&&current->ownerID==ownerID){
+
+//		cprintf("%d share's name: %s, share's ownerId: %d \n", i,current->name,current->ownerID);
+		i++;
+		bool isFound=!(strncmp(name, current->name, strlen(name)))&&current->ownerID==ownerID;
+//		cprintf("is found = %d \n",isFound);
+		//cprintf("current: %d \n", (uint32)current);
+
+		if(isFound){
+//			cprintf("current: %d \n", (uint32)current);
 			return current;
 		}
 	}
-
 	return NULL;
 
 }
@@ -150,11 +165,79 @@ int createSharedObject(int32 ownerID, char* shareName, uint32 size, uint8 isWrit
 {
 	//TODO: [PROJECT'24.MS2 - #19] [4] SHARED MEMORY [KERNEL SIDE] - createSharedObject()
 	//COMMENT THE FOLLOWING LINE BEFORE START CODING
-	panic("createSharedObject is not implemented yet");
+	//panic("createSharedObject is not implemented yet");
 	//Your Code is Here...
+//	cprintf("\n entered createSharedObject\n \n");
 
 	struct Env* myenv = get_cpu_proc(); //The calling environment
+	acquire_spinlock(&AllShares.shareslock);
+	struct Share* found=get_share(ownerID,shareName);
+	release_spinlock(&AllShares.shareslock);
+
+	if(found!=NULL){
+//		cprintf("exited createSharedObject with the shared memory already exists \n");
+
+		return E_SHARED_MEM_EXISTS;
+	}
+
+	struct Share* sharedObject= create_share(ownerID, shareName,size,isWritable);
+
+	if(!sharedObject){
+//		cprintf("exited createSharedObject at no memory to create shared object\n");
+		return E_NO_SHARE;
+	}
+
+	int noOfPagesNeeded=ROUNDUP(size, PAGE_SIZE)/PAGE_SIZE;
+
+	int frameStorageIndex=0;
+	for(int i=(uint32)virtual_address; i<((uint32)virtual_address+ROUNDUP(size, PAGE_SIZE));i+=PAGE_SIZE){
+		struct FrameInfo* ptr;
+		int x=allocate_frame(&ptr);
+
+		if(x==E_NO_MEM){
+			kfree(sharedObject);
+
+			for (uint32 k = (uint32)virtual_address; k < i; k += PAGE_SIZE) {
+				unmap_frame(myenv->env_page_directory, k);
+				free_frame(get_frame_info(myenv->env_page_directory, k, NULL));
+			}
+
+		return E_NO_SHARE;
+		}
+
+		x=map_frame(myenv->env_page_directory, ptr, (uint32)i, PERM_WRITEABLE);
+		pt_set_page_permissions(myenv->env_page_directory, (uint32)i,PERM_WRITEABLE,0);
+		pt_set_page_permissions(myenv->env_page_directory, (uint32)i,PERM_USER,0);
+
+
+		if(x==E_NO_MEM){
+			kfree(sharedObject);
+
+			for (uint32 k = (uint32)virtual_address; k < ((uint32)virtual_address+ROUNDUP(size, PAGE_SIZE)); k += PAGE_SIZE) {
+				unmap_frame(myenv->env_page_directory, k);
+				free_frame(get_frame_info(myenv->env_page_directory, k, NULL));
+			}
+
+			return E_NO_SHARE;
+		}
+
+		sharedObject->framesStorage[frameStorageIndex]=ptr;
+		frameStorageIndex++;
+
+	}
+//	cprintf("frame storage hold %d in creation \n", frameStorageIndex);
+	acquire_spinlock(&AllShares.shareslock);
+	LIST_INSERT_TAIL(&AllShares.shares_list, sharedObject);
+	release_spinlock(&AllShares.shareslock);
+//	cprintf("is the sharedObject writeable? %d \n",sharedObject->isWritable);
+//	cprintf("exited createSharedObject normally\n");
+//	((uint32*)virtual_address)[0]=-1;
+//		       cprintf("trial 1: %d \n", ((uint32*)virtual_address)[0]);
+
+	return sharedObject->ID;
+
 }
+
 
 
 //======================
@@ -162,12 +245,64 @@ int createSharedObject(int32 ownerID, char* shareName, uint32 size, uint8 isWrit
 //======================
 int getSharedObject(int32 ownerID, char* shareName, void* virtual_address)
 {
+	//cprintf("entered getSharedObject! \n");
 	//TODO: [PROJECT'24.MS2 - #21] [4] SHARED MEMORY [KERNEL SIDE] - getSharedObject()
 	//COMMENT THE FOLLOWING LINE BEFORE START CODING
-	panic("getSharedObject is not implemented yet");
+	//panic("getSharedObject is not implemented yet");
 	//Your Code is Here...
 
 	struct Env* myenv = get_cpu_proc(); //The calling environment
+
+	//cprintf("before the lock! \n");
+
+	    acquire_spinlock(&AllShares.shareslock);
+		struct Share* x= get_share(ownerID,shareName);
+		release_spinlock(&AllShares.shareslock);
+		//cprintf("after the lock! share found at: %d \n",(uint32) x);
+
+
+
+			if(x==NULL){
+				//cprintf("exited with the share not found \n");
+
+					return E_NO_SHARE ;
+				}
+			struct FrameInfo** frames =x->framesStorage;
+			int index=0;
+	    	 //cprintf("starting to map! \n");
+			int ret;
+	     while(index<(ROUNDUP(x->size,PAGE_SIZE)/PAGE_SIZE)){
+	    	 //cprintf("we're mapping! \n");
+	    	 if(x->isWritable){
+	    	 ret=map_frame(myenv->env_page_directory, frames[index], (uint32)virtual_address+(index*PAGE_SIZE),PERM_WRITEABLE );
+	    	 }else{
+		     ret=map_frame(myenv->env_page_directory, frames[index], (uint32)virtual_address+(index*PAGE_SIZE),0 );
+	    	 }
+
+	 		pt_set_page_permissions(myenv->env_page_directory, (uint32)virtual_address+(index*PAGE_SIZE),PERM_USER,0);
+	 		//cprintf("just mapped with result %d \n", ret);
+
+	    			if(ret==E_NO_MEM){
+	    				 int index2=0;
+	    				 while(index2!=index){
+	    				 unmap_frame(myenv->env_page_directory,(uint32)virtual_address+(index2*PAGE_SIZE) );
+	    				 index2++;
+
+	    				 }
+	    				//cprintf("exited with no memory found for mapping\n");
+
+	    				return E_NO_MEM;
+	    					}
+
+	    index++ ;
+	     }
+	     for (int i=0 ; i <index;i++){
+	    	 frames[i]->references++;
+
+	     }
+	     x->references++;
+	     //cprintf("EXITING GETSHAREDOBJECT NORMALLY!\n");
+		 return x->ID;
 }
 
 //==================================================================================//
@@ -185,6 +320,7 @@ void free_share(struct Share* ptrShare)
 	//COMMENT THE FOLLOWING LINE BEFORE START CODING
 	panic("free_share is not implemented yet");
 	//Your Code is Here...
+
 
 }
 //========================

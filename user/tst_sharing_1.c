@@ -39,7 +39,10 @@ _main(void)
 		expected = 1+1 ; /*1page +1table*/
 		int diff = (freeFrames - sys_calculate_free_frames());
 		if (diff < expected || diff > expected +1+1 /*extra 1 page & 1 table for sbrk (at max)*/) {is_correct = 0; cprintf("Wrong allocation (current=%d, expected=%d): make sure that you allocate the required space in the user environment and add its frames to frames_storage", freeFrames - sys_calculate_free_frames(), expected);}
+		//cprintf(" \n expected va: %d \n",(uint32)pagealloc_start);
 		if (is_correct) eval += 20 ;
+		//cprintf("\n EVALUATION: %d \n",eval);
+
 
 		is_correct = 1;
 		freeFrames = sys_calculate_free_frames() ;
@@ -48,7 +51,9 @@ _main(void)
 		expected = 2 ; /*2pages*/
 		diff = (freeFrames - sys_calculate_free_frames());
 		if (diff < expected || diff > expected +1+1 /*extra 1 page & 1 table for sbrk (at max)*/) {is_correct = 0; cprintf("Wrong allocation (current=%d, expected=%d): make sure that you allocate the required space in the user environment and add its frames to frames_storage", freeFrames - sys_calculate_free_frames(), expected);}
+		//cprintf("\n expected va: %d \n",(uint32)(pagealloc_start + 1 * PAGE_SIZE));
 		if (is_correct) eval += 20 ;
+		//cprintf("\n EVALUATION: %d \n",eval);
 
 		is_correct = 1;
 		freeFrames = sys_calculate_free_frames() ;
@@ -57,7 +62,10 @@ _main(void)
 		expected = 1 ; /*1page*/
 		diff = (freeFrames - sys_calculate_free_frames());
 		if (diff < expected || diff > expected +1+1 /*extra 1 page & 1 table for sbrk (at max)*/) {is_correct = 0; cprintf("Wrong allocation (current=%d, expected=%d): make sure that you allocate the required space in the user environment and add its frames to frames_storage", freeFrames - sys_calculate_free_frames(), expected);}
+		//cprintf(" \n expected va: %d \n",(uint32)(pagealloc_start + 3 * PAGE_SIZE));
 		if (is_correct) eval += 20 ;
+		cprintf("\n EVALUATION: %d \n",eval);
+
 	}
 	cprintf("Step A is completed successfully!!\n\n\n");
 
@@ -69,13 +77,19 @@ _main(void)
 		{
 			x[i] = -1;
 			y[i] = -1;
+
 		}
+		//cprintf("EXITED 1ST FOR LOOP\n");
 
 		i=0;
 		for(;i<2*PAGE_SIZE/4;i++)
 		{
+			//cprintf("ENTERED 2ND FOR LOOP\n");
+
 			z[i] = -1;
 		}
+		//cprintf("EXITED 2ND FOR LOOP\n");
+
 
 		if( x[0] !=  -1)  					{is_correct = 0; cprintf("Reading/Writing of shared object is failed");}
 		if( x[PAGE_SIZE/4 - 1] !=  -1)  	{is_correct = 0; cprintf("Reading/Writing of shared object is failed");}
@@ -89,6 +103,7 @@ _main(void)
 	if (is_correct)
 		eval += 40 ;
 	cprintf("\n%~Test of Shared Variables [Create] [1] completed. Eval = %d%%\n\n", eval);
+
 
 	return;
 }

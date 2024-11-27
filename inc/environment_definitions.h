@@ -94,6 +94,20 @@ struct Context {
   uint32 ebp;
   uint32 eip;
 };
+//#define U_ARR_SIZE ((USER_HEAP_MAX - USER_HEAP_START) / PAGE_SIZE)
+//#define U_ARR_SIZE ((USER_HEAP_MAX - (USER_HEAP_START+ DYN_ALLOC_MAX_SIZE) / PAGE_SIZE)
+//
+//struct allocatedtogether{
+//		uint32 size;
+//		void* VA;
+//		int32 env_id;
+//};
+////struct MarkedTogether{
+////		bool marked;
+////		void* VA;
+////};
+//
+//struct allocatedtogether Allpages[U_ARR_SIZE];
 
 struct Env {
 	//================
