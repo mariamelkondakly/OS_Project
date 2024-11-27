@@ -32,6 +32,11 @@ struct allocatedtogether{
 		void* VA;
 };
 struct allocatedtogether Allpages[U_ARR_SIZE];
+struct sharedBundle{
+	int32 ID ;
+	void* VA;
+};
+struct sharedBundle sharedBundles[USER_HEAP_MAX_PAGES];
 
 
 
@@ -252,6 +257,13 @@ void* smalloc(char* sharedVarName, uint32 size, uint8 isWritable)
        	return NULL;
        }
        markAddressRangeAsAllocated(first_va_found, numOfPagesNeeded);
+       for(int i=0;i<USER_HEAP_MAX_PAGES;i++){
+       		if(sharedBundles[i].VA==NULL){
+       			sharedBundles[i].VA = (void*)first_va_found;
+       			sharedBundles[i].ID = x;
+       			break;
+       		}
+       	}
 //       ((uint32*)first_va_found)[0]=-1;
 //       cprintf("what is in that location: %d \n",((uint32*)first_va_found)[0]);
        //cprintf("expected va: %d \n",first_va_found);
@@ -339,34 +351,8 @@ void sfree(void* virtual_address)
 {
 	//TODO: [PROJECT'24.MS2 - BONUS#4] [4] SHARED MEMORY [USER SIDE] - sfree()
 	// Write your code here, remove the panic and write your code
-	//panic("sfree() is not implemented yet...!!");
-	uint32 startVa=USER_HEAP_MAX - (USER_HEAP_START+ DYN_ALLOC_MAX_SIZE+PAGE_SIZE);
-	uint32 endOfPage=startVa+PAGE_SIZE;
-	uint32 finalVa;
-	int32 ID;
-	bool found=0;
-	while(endOfPage<=USER_HEAP_MAX){
-		if((uint32)virtual_address==startVa||(uint32)virtual_address==USER_HEAP_MAX){
-			found=1;
-			finalVa=startVa;
-			break;
-		}
-		else if((uint32)virtual_address==endOfPage){
-			found=1;
-			finalVa=endOfPage;
-			break;
-		}
-		else if((uint32)virtual_address>startVa&&(uint32)virtual_address<endOfPage){
-			found=1;
-			finalVa=startVa;
-			break;
-		}
-		startVa=endOfPage;
-		endOfPage+=PAGE_SIZE;
-	}
-	if(found){
+	panic("sfree() is not implemented yet...!!");
 
-	}
 }
 
 

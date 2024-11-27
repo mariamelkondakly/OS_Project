@@ -270,11 +270,15 @@ int getSharedObject(int32 ownerID, char* shareName, void* virtual_address)
 			struct FrameInfo** frames =x->framesStorage;
 			int index=0;
 	    	 //cprintf("starting to map! \n");
-
-	     while(frames[index]!=NULL){
+			int ret;
+	     while(index<(ROUNDUP(x->size,PAGE_SIZE)/PAGE_SIZE)){
 	    	 //cprintf("we're mapping! \n");
+	    	 if(x->isWritable){
+	    	 ret=map_frame(myenv->env_page_directory, frames[index], (uint32)virtual_address+(index*PAGE_SIZE),PERM_WRITEABLE );
+	    	 }else{
+		     ret=map_frame(myenv->env_page_directory, frames[index], (uint32)virtual_address+(index*PAGE_SIZE),0 );
+	    	 }
 
-	    	 int ret=map_frame(myenv->env_page_directory, frames[index], (uint32)virtual_address+(index*PAGE_SIZE),PERM_WRITEABLE*x->isWritable );
 	 		pt_set_page_permissions(myenv->env_page_directory, (uint32)virtual_address+(index*PAGE_SIZE),PERM_USER,0);
 	 		//cprintf("just mapped with result %d \n", ret);
 
@@ -314,9 +318,8 @@ void free_share(struct Share* ptrShare)
 {
 	//TODO: [PROJECT'24.MS2 - BONUS#4] [4] SHARED MEMORY [KERNEL SIDE] - free_share()
 	//COMMENT THE FOLLOWING LINE BEFORE START CODING
-	//panic("free_share is not implemented yet");
+	panic("free_share is not implemented yet");
 	//Your Code is Here...
-	//LIST_REMOVE(AllShares.shares_list, ptrShare);
 
 
 }
