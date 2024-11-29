@@ -296,10 +296,7 @@ int getSharedObject(int32 ownerID, char* shareName, void* virtual_address)
 
 	    index++ ;
 	     }
-	     for (int i=0 ; i <index;i++){
-	    	 frames[i]->references++;
 
-	     }
 	     x->references++;
 	     //cprintf("EXITING GETSHAREDOBJECT NORMALLY!\n");
 		 return x->ID;
@@ -318,8 +315,23 @@ void free_share(struct Share* ptrShare)
 {
 	//TODO: [PROJECT'24.MS2 - BONUS#4] [4] SHARED MEMORY [KERNEL SIDE] - free_share()
 	//COMMENT THE FOLLOWING LINE BEFORE START CODING
-	panic("free_share is not implemented yet");
+	//panic("free_share is not implemented yet");
 	//Your Code is Here...
+	LIST_REMOVE(&AllShares.shares_list, ptrShare);
+	int index=0;
+	while(index<(ROUNDUP(ptrShare->size,PAGE_SIZE)/PAGE_SIZE)){
+			free_frame(ptrShare->framesStorage[index]);
+			index++;
+	}
+	index=0;
+	while(index<(ROUNDUP(ptrShare->size,PAGE_SIZE)/PAGE_SIZE)){
+		ptrShare->framesStorage[index]=NULL;
+		index++;
+
+	}
+
+	kfree(ptrShare->framesStorage);
+	kfree(ptrShare);
 
 
 }
@@ -330,7 +342,37 @@ int freeSharedObject(int32 sharedObjectID, void *startVA)
 {
 	//TODO: [PROJECT'24.MS2 - BONUS#4] [4] SHARED MEMORY [KERNEL SIDE] - freeSharedObject()
 	//COMMENT THE FOLLOWING LINE BEFORE START CODING
-	panic("freeSharedObject is not implemented yet");
+	//panic("freeSharedObject is not implemented yet");
 	//Your Code is Here...
+	struct Env* myenv = get_cpu_proc(); //The calling environment
+
+	struct Share* current;
+	bool found=0;
+	LIST_FOREACH(current,&(AllShares.shares_list)){
+		if(current->ID==sharedObjectID){
+			found=1;
+			break;
+		}
+
+	}
+	if(!found){
+		return E_NO_SHARE;
+	}
+	current->references--;
+
+	if(current->references==0){
+		free_share(current);
+		uint32 *ptr_page_table;
+//		get_frame_info(myenv->env_page_directory, (uint32)startVA, &ptr);
+		uint32 ret =  get_page_table(ptr_page_directory, (uint32)startVA, &ptr_page_table) ;
+		cprintf("page table pointer: %x \n", ptr_page_table);
+		unmap_frame(myenv->env_page_directory,(uint32) ptr_page_table);
+		free_frame(get_frame_info(myenv->env_page_directory,(uint32) ptr_page_table,NULL));
+	}
+	for (uint32 i = (uint32)startVA; i < ((uint32)startVA+ROUNDUP(current->size, PAGE_SIZE)); i += PAGE_SIZE) {
+						unmap_frame(myenv->env_page_directory, i);
+					}
+
+	return 0;
 
 }
