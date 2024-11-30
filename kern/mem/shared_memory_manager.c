@@ -179,7 +179,6 @@ int createSharedObject(int32 ownerID, char* shareName, uint32 size, uint8 isWrit
 
 		return E_SHARED_MEM_EXISTS;
 	}
-
 	struct Share* sharedObject= create_share(ownerID, shareName,size,isWritable);
 
 	if(!sharedObject){
@@ -204,10 +203,11 @@ int createSharedObject(int32 ownerID, char* shareName, uint32 size, uint8 isWrit
 
 		return E_NO_SHARE;
 		}
+//		cprintf("before mapping frame! %x \n",i);
 
 		x=map_frame(myenv->env_page_directory, ptr, (uint32)i, PERM_WRITEABLE);
-		pt_set_page_permissions(myenv->env_page_directory, (uint32)i,PERM_WRITEABLE,0);
 		pt_set_page_permissions(myenv->env_page_directory, (uint32)i,PERM_USER,0);
+//		cprintf("after mapping frame! %x \n",i);
 
 
 		if(x==E_NO_MEM){
@@ -220,6 +220,9 @@ int createSharedObject(int32 ownerID, char* shareName, uint32 size, uint8 isWrit
 
 			return E_NO_SHARE;
 		}
+//		uint32 pd_used;
+//		pd_used =pd_is_table_used(myenv->env_page_directory,(uint32)i);
+//		cprintf("is page table used after allocation? %d \n", pd_used);
 
 		sharedObject->framesStorage[frameStorageIndex]=ptr;
 		frameStorageIndex++;
@@ -294,6 +297,9 @@ int getSharedObject(int32 ownerID, char* shareName, void* virtual_address)
 	    				return E_NO_MEM;
 	    					}
 
+
+
+
 	    index++ ;
 	     }
 
@@ -319,10 +325,10 @@ void free_share(struct Share* ptrShare)
 	//Your Code is Here...
 	LIST_REMOVE(&AllShares.shares_list, ptrShare);
 	int index=0;
-	while(index<(ROUNDUP(ptrShare->size,PAGE_SIZE)/PAGE_SIZE)){
-			free_frame(ptrShare->framesStorage[index]);
-			index++;
-	}
+//	while(index<(ROUNDUP(ptrShare->size,PAGE_SIZE)/PAGE_SIZE)){
+//			free_frame(ptrShare->framesStorage[index]);
+//			index++;
+//	}
 	index=0;
 	while(index<(ROUNDUP(ptrShare->size,PAGE_SIZE)/PAGE_SIZE)){
 		ptrShare->framesStorage[index]=NULL;
@@ -338,6 +344,22 @@ void free_share(struct Share* ptrShare)
 //========================
 // [B2] Free Share Object:
 //========================
+
+int isTableUsed(uint32* ptr_page_table){
+	bool pd_used=1;
+	for(int j=(uint32)ptr_page_table; j<(PAGE_SIZE+(uint32)ptr_page_table);j+=sizeof(ptr_page_table)){
+//			cprintf("the page table pointer points at: %x \n",i);
+		if((uint32*)*((uint32*)j)!=NULL){
+			pd_used=1;
+			break;
+		}
+		else{
+			pd_used=0;
+		}
+	}
+	return pd_used;
+}
+
 int freeSharedObject(int32 sharedObjectID, void *startVA)
 {
 	//TODO: [PROJECT'24.MS2 - BONUS#4] [4] SHARED MEMORY [KERNEL SIDE] - freeSharedObject()
@@ -345,7 +367,7 @@ int freeSharedObject(int32 sharedObjectID, void *startVA)
 	//panic("freeSharedObject is not implemented yet");
 	//Your Code is Here...
 	struct Env* myenv = get_cpu_proc(); //The calling environment
-
+//	cprintf("the startVA: %x \n", startVA);
 	struct Share* current;
 	bool found=0;
 	LIST_FOREACH(current,&(AllShares.shares_list)){
@@ -361,17 +383,49 @@ int freeSharedObject(int32 sharedObjectID, void *startVA)
 	current->references--;
 
 	if(current->references==0){
+		uint32 *ptr_page_table =NULL;
+		struct FrameInfo* ptr =NULL;
+		bool pd_used=1;
+
+		//unmapping the shared object's frames 1st
+//		for (uint32 i = (uint32)startVA; i < ((uint32)startVA+ROUNDUP(current->size, PAGE_SIZE)); i += PAGE_SIZE) {
+//			ptr =get_frame_info(myenv->env_page_directory, (uint32)i, &ptr_page_table);
+//			if(ptr!= NULL){
+////							free_frame(ptr);
+//				cprintf("while unmapping the VA itself, startVA: %x , page table pointer: %x \n",i, ptr_page_table);
+//			}
+//		}
+
+		for (uint32 i = (uint32)startVA; i < ((uint32)startVA+ROUNDUP(current->size, PAGE_SIZE)); i += PAGE_SIZE) {
+			ptr =get_frame_info(myenv->env_page_directory, (uint32)i, &ptr_page_table);
+
+			cprintf("startVA: %x , page table pointer: %x \n",i, ptr_page_table);
+			if(ptr!= NULL){
+				unmap_frame(myenv->env_page_directory, i);
+			}
+
+//			cprintf("is pd_used? %d \n", pd_used);
+	//		pd_used =pd_is_table_used(myenv->env_page_directory,i);
+			if(!isTableUsed(ptr_page_table)){
+				if(ptr_page_table!=NULL&&ptr_page_table!=0){
+				    cprintf("PAGE TABLE DELETED HERE! \n");
+					pd_clear_page_dir_entry(myenv->env_page_directory,(uint32)i);
+
+					unmap_frame(myenv->env_page_directory,(uint32) ptr_page_table);
+				}
+			}
+		}
+
 		free_share(current);
-		uint32 *ptr_page_table;
-//		get_frame_info(myenv->env_page_directory, (uint32)startVA, &ptr);
-		uint32 ret =  get_page_table(ptr_page_directory, (uint32)startVA, &ptr_page_table) ;
-		cprintf("page table pointer: %x \n", ptr_page_table);
-		unmap_frame(myenv->env_page_directory,(uint32) ptr_page_table);
-		free_frame(get_frame_info(myenv->env_page_directory,(uint32) ptr_page_table,NULL));
 	}
-	for (uint32 i = (uint32)startVA; i < ((uint32)startVA+ROUNDUP(current->size, PAGE_SIZE)); i += PAGE_SIZE) {
-						unmap_frame(myenv->env_page_directory, i);
-					}
+	else{
+		for (uint32 i = (uint32)startVA; i < ((uint32)startVA+ROUNDUP(current->size, PAGE_SIZE)); i += PAGE_SIZE) {
+									unmap_frame(myenv->env_page_directory, i);
+								}
+
+	}
+	//tlb_invalidate(myenv->env_page_directory,(uint32)startVA);
+	tlbflush();
 
 	return 0;
 

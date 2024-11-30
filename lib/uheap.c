@@ -35,6 +35,7 @@ struct allocatedtogether Allpages[U_ARR_SIZE];
 struct sharedBundle{
 	int32 ID ;
 	void* VA;
+	uint32 size;
 };
 struct sharedBundle sharedBundles[USER_HEAP_MAX_PAGES];
 
@@ -261,6 +262,7 @@ void* smalloc(char* sharedVarName, uint32 size, uint8 isWritable)
 			   if(sharedBundles[i].VA==NULL){
 			   sharedBundles[i].VA=(void*)first_va_found;
 			   sharedBundles[i].ID=x;
+			   sharedBundles[i].size=size;
 			   break;
 		   }
 		 }
@@ -330,6 +332,7 @@ void* sget(int32 ownerEnvID, char *sharedVarName){
 		   if(sharedBundles[i].VA==NULL){
 		   sharedBundles[i].VA=(void*)first_va_found;
 		   sharedBundles[i].ID=x;
+		   sharedBundles[i].size=size;
 		   break;
 	   }
 	  }
@@ -353,46 +356,26 @@ void* sget(int32 ownerEnvID, char *sharedVarName){
 //	use sys_freeSharedObject(...); which switches to the kernel mode,
 //	calls freeSharedObject(...) in "shared_memory_manager.c", then switch back to the user mode here
 //	the freeSharedObject() function is empty, make sure to implement it.
-
 void sfree(void* virtual_address)
 {
 	//TODO: [PROJECT'24.MS2 - BONUS#4] [4] SHARED MEMORY [USER SIDE] - sfree()
 	// Write your code here, remove the panic and write your code
 	//panic("sfree() is not implemented yet...!!");
-//	uint32 startVa=USER_HEAP_MAX - (USER_HEAP_START+ DYN_ALLOC_MAX_SIZE+PAGE_SIZE);
-//	uint32 endOfPage=startVa+PAGE_SIZE;
-//	uint32 finalVa;
-//
-//	while(endOfPage<=USER_HEAP_MAX){
-//		if((uint32)virtual_address==startVa||(uint32)virtual_address==USER_HEAP_MAX){
-//			found=1;
-//			finalVa=startVa;
-//			break;
-//		}
-//		else if((uint32)virtual_address==endOfPage){
-//			found=1;
-//			finalVa=endOfPage;
-//			break;
-//		}
-//		else if((uint32)virtual_address>startVa&&(uint32)virtual_address<endOfPage){
-//			found=1;
-//			finalVa=startVa;
-//			break;
-//		}
-//		startVa=endOfPage;
-//		endOfPage+=PAGE_SIZE;
-//	}
+
 	int32 ID;
+	uint32 size =0;
 	bool found=0;
 	for(int i=0;i<USER_HEAP_MAX_PAGES;i++){
 			cprintf("this is the current va in the array at %d : %x \n", i, sharedBundles[i].VA);
 			found=(uint32)sharedBundles[i].VA==(uint32)virtual_address;
 			if(found){
 				ID=sharedBundles[i].ID;
+				size = sharedBundles[i].size;
 				break;
 			}
 		}
 		if(found){
+			markAddressRangeAsFree((uint32)virtual_address,ROUNDUP(size,PAGE_SIZE)/PAGE_SIZE);
 			cprintf("found the shared object, va: %x id: %x \n", virtual_address, ID);
 			sys_freeSharedObject(ID,virtual_address);
 			cprintf("returned from freeSharedObject \n");
@@ -403,12 +386,14 @@ void sfree(void* virtual_address)
 
 					sharedBundles[i].ID=0;
 					sharedBundles[i].VA=NULL;
+					sharedBundles[i].size=0;
 					break;
 				}
 			}
-		}
-}
 
+			}
+
+		}
 //=================================
 // REALLOC USER SPACE:
 //=================================
