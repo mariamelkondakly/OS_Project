@@ -156,8 +156,8 @@ void* sys_sbrk(int numOfPages)
 	}
 	uint32 prevBreak= env->Break;
 	env->Break+=sizeNeeded;
-//	uint32* END=(uint32*)(prevBreak-4);
-//	*END=1;
+   //uint32* END=(uint32*)(prevBreak-4);
+   //*END=1;
 	for(int i=0;i<numOfPages;i++){
 		//pt_set_page_permissions(env->env_page_directory,prevBreak+i*PAGE_SIZE, 0x400,0);
 		uint32* pageTable = NULL;
@@ -185,19 +185,18 @@ void allocate_user_mem(struct Env* e, uint32 virtual_address, uint32 size)
 {
 	/*====================================*/
 	/*Remove this line before start coding*/
-//	inctst();
-//	return;
+    //inctst();
+    //return;
 	/*====================================*/
 
 	//TODO: [PROJECT'24.MS2 - #13] [3] USER HEAP [KERNEL SIDE] - allocate_user_mem()
 	// Write your code here, remove the panic and write your code
-//	panic("allocate_user_mem() is not implemented yet...!!");
+    //panic("allocate_user_mem() is not implemented yet...!!");
 
 	if( virtual_address >= USER_HEAP_START && virtual_address < USER_HEAP_MAX ){
 
 		int marked_bit = (1<<10);
-		cprintf("marked bit is %d \n , ",marked_bit);
-
+		//cprintf("marked bit is %d \n , ",marked_bit);
 
 		uint32 nopages = ROUNDUP(size, PAGE_SIZE) / PAGE_SIZE ;
 		for (uint32 i=0; i< nopages ;i++){
@@ -211,6 +210,7 @@ void allocate_user_mem(struct Env* e, uint32 virtual_address, uint32 size)
 			}
 
 			if(pageTable != NULL || createdPageTable != NULL){
+				//marking them
 				pt_set_page_permissions(e->env_page_directory, virtual_address+i*PAGE_SIZE, 0x400,0);
 			}
 		}
@@ -229,13 +229,13 @@ void free_user_mem(struct Env* e, uint32 virtual_address, uint32 size)
 {
 	/*====================================*/
 	/*Remove this line before start coding*/
-//	inctst();
-//	return;
+   //inctst();
+   //return;
 	/*====================================*/
 
 	//TODO: [PROJECT'24.MS2 - #15] [3] USER HEAP [KERNEL SIDE] - free_user_mem
 	// Write your code here, remove the panic and write your code
-//	panic("free_user_mem() is not implemented yet...!!");
+    //panic("free_user_mem() is not implemented yet...!!");
 
 
 	if( virtual_address >= USER_HEAP_START && virtual_address < USER_HEAP_MAX ){
@@ -250,10 +250,10 @@ void free_user_mem(struct Env* e, uint32 virtual_address, uint32 size)
 			if(pageTable != NULL){
 				pt_set_page_permissions(e->env_page_directory, virtual_address+i*PAGE_SIZE,0 ,0x400);
 
-				// free all pages from page file   (from appendix)
+				// free all pages from page file
 				pf_remove_env_page(e, virtual_address+i*PAGE_SIZE);
 
-				// free from working set  (from appendix): Flush certain Virtual Address from Working Set
+				// free from working set: Flush certain Virtual Address from Working Set
 				// Search for the given virtual address inside the working set of “e” and, if found, removes its entry.
 				env_page_ws_invalidate(e, virtual_address+i*PAGE_SIZE);
 

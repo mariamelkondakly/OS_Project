@@ -11,6 +11,10 @@
 //	On success: 0
 //	Otherwise (if no memory OR initial size exceed the given limit): PANIC
 int initialize_kheap_dynamic_allocator(uint32 daStart, uint32 initSizeToAllocate, uint32 daLimit) {
+	//TODO: [PROJECT'24.MS2 - #01] [1] KERNEL HEAP - initialize_kheap_dynamic_allocator
+	// Write your code here, remove the panic and write your code
+	//panic("initialize_kheap_dynamic_allocator() is not implemented yet...!!");
+
     start = daStart;
     hard_limit = daLimit;
 
@@ -71,8 +75,25 @@ int initialize_kheap_dynamic_allocator(uint32 daStart, uint32 initSizeToAllocate
 
 void* sbrk(int numOfPages)
 {
-	//cprintf("2.0 sbrk entered \n \n");
+	/* numOfPages > 0: move the segment break of the kernel to increase the size of its heap by the given numOfPages,
+		 * 				you should allocate pages and map them into the kernel virtual address space,
+		 * 				and returns the address of the previous break (i.e. the beginning of newly mapped memory).
+		 * numOfPages = 0: just return the current position of the segment break
+		 *
+		 * NOTES:
+		 * 	1) Allocating additional pages for a kernel dynamic allocator will fail if the free frames are exhausted
+		 * 		or the break exceed the limit of the dynamic allocator. If sbrk fails, return -1
+		 */
 
+	//MS2: COMMENT THIS LINE BEFORE START CODING==========
+	//return (void*)-1 ;
+	//====================================================
+
+	//TODO: [PROJECT'24.MS2 - #02] [1] KERNEL HEAP - sbrk
+	// Write your code here, remove the panic and write your code
+	//panic("sbrk() is not implemented yet...!!");
+
+	//cprintf("2.0 sbrk entered \n \n");
 	//cprintf("number of pages: %d \n \n", numOfPages);
 
 	uint32 neededSize=numOfPages*PAGE_SIZE;
@@ -129,14 +150,16 @@ void* sbrk(int numOfPages)
 		Break+=neededSize;
 		//cprintf("Current Break: %d,\n", Break);
 
-//		struct BlockElement* lastFreeBlock = LIST_LAST(&freeBlocksList);
-//	    cprintf("old last free block size: %d \n \n",get_block_size(LIST_LAST(&freeBlocksList)));
-//			    lastFreeBlock = LIST_LAST(&freeBlocksList);
-//			    cprintf("NEW last free block size: %d \n \n",get_block_size(lastFreeBlock));
+        //struct BlockElement* lastFreeBlock = LIST_LAST(&freeBlocksList);
+        //cprintf("old last free block size: %d \n \n",get_block_size(LIST_LAST(&freeBlocksList)));
+        //lastFreeBlock = LIST_LAST(&freeBlocksList);
+        //cprintf("NEW last free block size: %d \n \n",get_block_size(lastFreeBlock));
+
 		return (void*)prevBreak;
 
 		}
 		else{ //if the number of pages is less than 0
+
 			//cprintf("2.4 sbrk return at 129 \n \n");
 			return (void*)-1 ;
 		}
@@ -144,24 +167,24 @@ void* sbrk(int numOfPages)
 	//cprintf("2.5 returned with null at line 132\n \n");
 	return (void*)-1;
 
-//	//MS2: COMMENT THIS LINE BEFORE START CODING==========
-//	//return (void*)-1 ;
-//	//====================================================
-
-	//TODO: [PROJECT'24.MS2 - #02] [1] KERNEL HEAP - sbrk
-	// Write your code here, remove the panic and write your code
-	//panic("sbrk() is not implemented yet...!!");
 }
 
 //TODO: [PROJECT'24.MS2 - BONUS#2] [1] KERNEL HEAP - Fast Page Allocator
 
 void* kmalloc(unsigned int size)
 {
-//	cprintf("AQUAL size is %d \n",size);
+	//TODO: [PROJECT'24.MS2 - #03] [1] KERNEL HEAP - kmalloc
+	// Write your code here, remove the panic and write your code
+	//kpanic_into_prompt("kmalloc() is not implemented yet...!!");
+
+	// use "isKHeapPlacementStrategyFIRSTFIT() ..." functions to check the current strategy
+
+     //cprintf("The Size equals %d \n",size);
 	 if (size == 0 || size > (KERNEL_HEAP_MAX - KERNEL_HEAP_START)) {
 			        cprintf("Invalid size for kmalloc: %u\n", size);
 			        return NULL;
 			    }
+	          //Block Allocator:
 			  if(size <= DYN_ALLOC_MAX_BLOCK_SIZE){
 			  		  //cprintf("ms1 alloc \n");
 			  		  void * ptr =alloc_block_FF(size);
@@ -169,7 +192,7 @@ void* kmalloc(unsigned int size)
 		  			  return NULL;
 			  		  return ptr;
 			  	  }
-
+			  //Page Allocator:
 			    uint32 first_va_found = hard_limit+PAGE_SIZE;
 			    int no_Of_required_pages = ROUNDUP(size, PAGE_SIZE) / PAGE_SIZE;
 
@@ -198,7 +221,7 @@ void* kmalloc(unsigned int size)
 			        return NULL;
 			    }
 
-			    // Map frames to the virtual addresses
+                 // Allocating frames
 			    for (int i = 0; i < no_Of_required_pages; i++) {
 			        struct FrameInfo *frame_info = NULL;
 			        int ret = allocate_frame(&frame_info);
@@ -206,7 +229,7 @@ void* kmalloc(unsigned int size)
 			        if (ret == E_NO_MEM || frame_info == NULL) {
 			            cprintf("No memory for frame allocation\n");
 
-			            // Cleanup already allocated frames
+			             // Unmapping and freeing
 			            for (uint32 k = first_va_found; k < first_va_found + i * PAGE_SIZE; k += PAGE_SIZE) {
 			                unmap_frame(ptr_page_directory, k);
 			                free_frame(get_frame_info(ptr_page_directory, k, NULL));
@@ -214,11 +237,12 @@ void* kmalloc(unsigned int size)
 			            return NULL;
 			        }
 
+			        // Map frames to the virtual addresses
 			        ret = map_frame(ptr_page_directory, frame_info, first_va_found + i * PAGE_SIZE, PERM_AVAILABLE | PERM_WRITEABLE);
 			        if (ret == E_NO_MEM) {
 			            cprintf("No memory for frame mapping\n");
 
-
+			            // Unmapping and freeing
 			            for (uint32 j = first_va_found; j < first_va_found + i * PAGE_SIZE; j += PAGE_SIZE) {
 			                unmap_frame(ptr_page_directory, j);
 			                free_frame(get_frame_info(ptr_page_directory, j, NULL));
@@ -229,6 +253,7 @@ void* kmalloc(unsigned int size)
 			            return NULL;
 			        }
 			    }
+			    // putting the allocated page into the array with its size and VA
 			    struct allocated_together str;
 			   	str.size=size;
 			   	str.VA=(void*)first_va_found;
@@ -243,7 +268,6 @@ void* kmalloc(unsigned int size)
 			   //cprintf("list done \n");
 			   //cprintf("add returned from kmalloc  %d \n" ,(void*)first_va_found);
 
-
 			    return (void*)first_va_found;
 }
 
@@ -251,19 +275,24 @@ void* kmalloc(unsigned int size)
 
 void kfree(void* virtual_address)
 {
-	//cprintf("add wanted to be freed %d \n" ,virtual_address);
-//	cprintf("hard_limit+PAGE_SIZE %d \n",hard_limit+PAGE_SIZE);
-//	cprintf("KERNEL_HEAP_MAX %d \n",KERNEL_HEAP_MAX);
+	//TODO: [PROJECT'24.MS2 - #04] [1] KERNEL HEAP - kfree
+	// Write your code here, remove the panic and write your code
+	//panic("kfree() is not implemented yet...!!");
 
+	//you need to get the size of the given allocation using its address
+	//refer to the project presentation and documentation for details
 
+	 //cprintf("address wanted to be freed %d \n" ,virtual_address);
+     //cprintf("hard_limit+PAGE_SIZE %d \n",hard_limit+PAGE_SIZE);
+     //cprintf("KERNEL_HEAP_MAX %d \n",KERNEL_HEAP_MAX);
+
+     //Block Allocator:
 	if((uint32)virtual_address>=KERNEL_HEAP_START && (uint32)virtual_address<=Break){
-				//struct Frame_Info *ptr_frame_info ;
-				//ptr_frame_info = to_frame_info(physical_address) ;
-				//free_frame(ptr_frame_info);
-
 				free_block(virtual_address);
 			}
+	  //Page Allocator:
 			else if((uint32)virtual_address>=hard_limit+PAGE_SIZE && (uint32)virtual_address<=KERNEL_HEAP_MAX){
+				// searching in the array for the VA of the page to its size
 				struct allocated_together* my_pages = NULL;
 				for(int i=0;i<ARR_SIZE;i++){
 					if(pages_together[i].VA!=NULL && pages_together[i].VA==virtual_address)
@@ -274,20 +303,20 @@ void kfree(void* virtual_address)
 						 }
 					}
 				if(my_pages!= NULL) {
-					cprintf("PAGE SIZE IS %d \n",my_pages->size);
+					//cprintf("PAGE SIZE IS %d \n",my_pages->size);
 					struct FrameInfo * frame_ptr =NULL;
 
 				for(int i=0;i<ROUNDUP(my_pages->size,PAGE_SIZE)/PAGE_SIZE;i++){
 				uint32 *ptr_page_table=NULL;
 				frame_ptr= get_frame_info(ptr_page_directory,(uint32)virtual_address+ i*PAGE_SIZE,&ptr_page_table);
+
 				if(frame_ptr!=NULL){
-//					cprintf("maria");
 				free_frame(frame_ptr);
 				unmap_frame(ptr_page_directory, (uint32)virtual_address + i*PAGE_SIZE);
 
 				}
 				}
-				//cprintf("5alas tany for loop \n");
+				//cprintf("Exit loop \n");
 				}
 			}else{
 				panic("Invalid Address \n");

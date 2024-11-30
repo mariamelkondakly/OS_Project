@@ -98,8 +98,7 @@ struct Share* create_share(int32 ownerID, char* shareName, uint32 size, uint8 is
 
 	struct Share* shareObject=(struct Share*) kmalloc(sizeof(struct Share));
 	if (!shareObject) {
-//		cprintf("exited create_share at shareObject =NULL\n");
-
+    //cprintf("exited create_share at shareObject =NULL\n");
 	        return NULL;  // Memory allocation failed
 	    }
 	uint32 mask = 0x7FFFFFFF;
@@ -107,7 +106,7 @@ struct Share* create_share(int32 ownerID, char* shareName, uint32 size, uint8 is
 
 	shareObject->framesStorage=create_frames_storage(ROUNDUP(size,PAGE_SIZE)/PAGE_SIZE);
 	if (!shareObject->framesStorage) {
-//		cprintf("exited create_share at framesStorage =NULL\n");
+       //cprintf("exited create_share at framesStorage =NULL\n");
 		kfree(shareObject);
 		return NULL;
 	}
@@ -119,7 +118,7 @@ struct Share* create_share(int32 ownerID, char* shareName, uint32 size, uint8 is
 	shareObject->ID=maskedVA;
 	shareObject->size=size;
 
-//	cprintf("exited create_share normally");
+    //cprintf("exited create_share normally");
 
 	return shareObject;
 
@@ -143,14 +142,14 @@ struct Share* get_share(int32 ownerID, char* name)
 	int i=1;
 	LIST_FOREACH(current,&(AllShares.shares_list)){
 
-//		cprintf("%d share's name: %s, share's ownerId: %d \n", i,current->name,current->ownerID);
+    //cprintf("%d share's name: %s, share's ownerId: %d \n", i,current->name,current->ownerID);
 		i++;
 		bool isFound=!(strncmp(name, current->name, strlen(name)))&&current->ownerID==ownerID;
-//		cprintf("is found = %d \n",isFound);
-		//cprintf("current: %d \n", (uint32)current);
+    //cprintf("is found = %d \n",isFound);
+	//cprintf("current: %d \n", (uint32)current);
 
 		if(isFound){
-//			cprintf("current: %d \n", (uint32)current);
+     //cprintf("current: %d \n", (uint32)current);
 			return current;
 		}
 	}
@@ -167,7 +166,8 @@ int createSharedObject(int32 ownerID, char* shareName, uint32 size, uint8 isWrit
 	//COMMENT THE FOLLOWING LINE BEFORE START CODING
 	//panic("createSharedObject is not implemented yet");
 	//Your Code is Here...
-//	cprintf("\n entered createSharedObject\n \n");
+
+   //cprintf("\n entered createSharedObject\n \n");
 
 	struct Env* myenv = get_cpu_proc(); //The calling environment
 	acquire_spinlock(&AllShares.shareslock);
@@ -175,7 +175,7 @@ int createSharedObject(int32 ownerID, char* shareName, uint32 size, uint8 isWrit
 	release_spinlock(&AllShares.shareslock);
 
 	if(found!=NULL){
-//		cprintf("exited createSharedObject with the shared memory already exists \n");
+    //cprintf("exited createSharedObject with the shared memory already exists \n");
 
 		return E_SHARED_MEM_EXISTS;
 	}
@@ -183,7 +183,7 @@ int createSharedObject(int32 ownerID, char* shareName, uint32 size, uint8 isWrit
 	struct Share* sharedObject= create_share(ownerID, shareName,size,isWritable);
 
 	if(!sharedObject){
-//		cprintf("exited createSharedObject at no memory to create shared object\n");
+    //cprintf("exited createSharedObject at no memory to create shared object\n");
 		return E_NO_SHARE;
 	}
 
@@ -225,14 +225,14 @@ int createSharedObject(int32 ownerID, char* shareName, uint32 size, uint8 isWrit
 		frameStorageIndex++;
 
 	}
-//	cprintf("frame storage hold %d in creation \n", frameStorageIndex);
+    //cprintf("frame storage hold %d in creation \n", frameStorageIndex);
 	acquire_spinlock(&AllShares.shareslock);
 	LIST_INSERT_TAIL(&AllShares.shares_list, sharedObject);
 	release_spinlock(&AllShares.shareslock);
-//	cprintf("is the sharedObject writeable? %d \n",sharedObject->isWritable);
-//	cprintf("exited createSharedObject normally\n");
-//	((uint32*)virtual_address)[0]=-1;
-//		       cprintf("trial 1: %d \n", ((uint32*)virtual_address)[0]);
+    //cprintf("is the sharedObject writeable? %d \n",sharedObject->isWritable);
+    //cprintf("exited createSharedObject normally\n");
+    //((uint32*)virtual_address)[0]=-1;
+    //cprintf("trial 1: %d \n", ((uint32*)virtual_address)[0]);
 
 	return sharedObject->ID;
 
@@ -251,12 +251,12 @@ int getSharedObject(int32 ownerID, char* shareName, void* virtual_address)
 	//panic("getSharedObject is not implemented yet");
 	//Your Code is Here...
 
-	struct Env* myenv = get_cpu_proc(); //The calling environment
+	    struct Env* myenv = get_cpu_proc(); //The calling environment
 
-	//cprintf("before the lock! \n");
+	    //cprintf("before the lock! \n");
 
 	    acquire_spinlock(&AllShares.shareslock);
-		struct Share* x= get_share(ownerID,shareName);
+	    struct Share* x= get_share(ownerID,shareName);
 		release_spinlock(&AllShares.shareslock);
 		//cprintf("after the lock! share found at: %d \n",(uint32) x);
 

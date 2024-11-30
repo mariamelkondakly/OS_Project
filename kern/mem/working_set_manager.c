@@ -22,14 +22,14 @@ inline struct WorkingSetElement* env_page_ws_list_create_element(struct Env* e, 
 		//panic("env_page_ws_list_create_element is not implemented yet");
 		//Your Code is Here...
 
-
+            //check if list is not full
 	        if(e->page_last_WS_element==NULL){
 	     	struct WorkingSetElement *wsElement=kmalloc(sizeof(struct WorkingSetElement));
 	    	wsElement->virtual_address=virtual_address;
 	    	return wsElement;
 
 	    	}
-	    	else{
+	    	else{ // list is full
 	    	    	panic("NO MEMORY ....");
 	    	    	return NULL;
 	    	}

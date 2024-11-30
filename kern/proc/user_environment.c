@@ -882,9 +882,9 @@ void* create_user_kern_stack(uint32* ptr_user_page_directory)
 				   return NULL;
 			   }
 			   stack_top = ret;
-			   cprintf("stack top = %d\n",(uint32)stack_top);
+			   //cprintf("stack top = %d\n",(uint32)stack_top);
 			   uint32 *bottom_page = stack_top-(noOfPages)*PAGE_SIZE;
-			   cprintf("stack bottom = %d\n",(uint32)bottom_page);
+			   //cprintf("stack bottom = %d\n",(uint32)bottom_page);
 			   pt_set_page_permissions(ptr_user_page_directory,(uint32)bottom_page,0,PERM_PRESENT);//setting present to 0
 
 			   //cprintf("Finished create stack\n");

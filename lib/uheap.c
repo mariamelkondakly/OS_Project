@@ -4,25 +4,25 @@
 //============================ REQUIRED FUNCTIONS ==================================//
 //==================================================================================//
 #define USER_HEAP_MAX_PAGES ((USER_HEAP_MAX - (USER_HEAP_START+ DYN_ALLOC_MAX_SIZE+PAGE_SIZE)) / PAGE_SIZE)
-static uint8 userHeapBitmap[USER_HEAP_MAX_PAGES] = {0}; // Bitmap to track allocations
+static uint8 userHeapPages[USER_HEAP_MAX_PAGES] = {0}; // to track allocations
 
 
-int isAddressAllocated(uint32 address) {
+int isAddressAllocated(uint32 address) { //checks if the page is allocated or not (used to allocate by first fit)
     uint32 pageIndex = ROUNDUP((address - (USER_HEAP_START+ DYN_ALLOC_MAX_SIZE+PAGE_SIZE)),PAGE_SIZE) / PAGE_SIZE;
-    return userHeapBitmap[pageIndex];
+    return userHeapPages[pageIndex];
 }
 
-void markAddressRangeAsAllocated(uint32 startAddress, int numOfPages) {
+void markAddressAsAllocated(uint32 startAddress, int numOfPages) { //marks the pages as allocated
     for (int i = 0; i < numOfPages; i++) {
         uint32 pageIndex = ROUNDUP((startAddress - (USER_HEAP_START+ DYN_ALLOC_MAX_SIZE+PAGE_SIZE)),PAGE_SIZE) / PAGE_SIZE + i;
-        userHeapBitmap[pageIndex] = 1;
+        userHeapPages[pageIndex] = 1;
     }
 }
 
-void markAddressRangeAsFree(uint32 startAddress, int numOfPages) {
+void markAddressAsFree(uint32 startAddress, int numOfPages) { //marks the pages as free
     for (int i = 0; i < numOfPages; i++) {
         uint32 pageIndex = (startAddress - (USER_HEAP_START+ DYN_ALLOC_MAX_SIZE+PAGE_SIZE))/ PAGE_SIZE + i;
-        userHeapBitmap[pageIndex] = 0;
+        userHeapPages[pageIndex] = 0;
     }
 }
 
@@ -37,7 +37,6 @@ struct sharedBundle{
 	void* VA;
 };
 struct sharedBundle sharedBundles[USER_HEAP_MAX_PAGES];
-
 
 
 //=============================================
@@ -60,9 +59,11 @@ void* malloc(uint32 size)
 	//==============================================================
 	//TODO: [PROJECT'24.MS2 - #12] [3] USER HEAP [USER SIDE] - malloc()
 	// Write your code here, remove the panic and write your code
-//	panic("malloc() is not implemented yet...!!");
+    //panic("malloc() is not implemented yet...!!");
+
 	//cprintf("entered malloc with size %d \n ",size);
 
+	//Block Allocator:
 	if(size <= DYN_ALLOC_MAX_BLOCK_SIZE){
 		//cprintf("ms1 alloc \n");
 		void * ptr = alloc_block_FF(size);
@@ -73,7 +74,7 @@ void* malloc(uint32 size)
 
 		return ptr;
 	}
-
+	//Page Allocator:
 	uint32 start_page_alloc = myEnv->hard_limit+PAGE_SIZE;
 	uint32 first_va_found = myEnv->hard_limit+PAGE_SIZE;
 	int no_Of_required_pages = ROUNDUP(size, PAGE_SIZE) / PAGE_SIZE;
@@ -84,6 +85,7 @@ void* malloc(uint32 size)
 	// Find contiguous free pages
 	int alloc = 0;
 	while(first_va_found<USER_HEAP_MAX){
+		//checking for free pages first fit
 		alloc = isAddressAllocated(first_va_found);
 		if(alloc == 1){
 			pagesCounter = 0;
@@ -105,7 +107,7 @@ void* malloc(uint32 size)
 		cprintf("Not enough contiguous space in User heap\n");
 		return NULL;
 	}
-
+    //putting the allocated page in the array to have its size with its VA
 	for(int i=0;i<U_ARR_SIZE;i++){
 		if(Allpages[i].VA==NULL){
 			Allpages[i].VA = (void*)first_va_found;
@@ -113,8 +115,8 @@ void* malloc(uint32 size)
 			break;
 		}
 	}
-
-	markAddressRangeAsAllocated(first_va_found, no_Of_required_pages);
+    //mark them
+	markAddressAsAllocated(first_va_found, no_Of_required_pages);
 	sys_allocate_user_mem(first_va_found,size);
 	return (void*)first_va_found;
 
@@ -133,33 +135,22 @@ void free(void* virtual_address)
 	// Write your code here, remove the panic and write your code
 	//panic("free() is not implemented yet...!!");
 
+   //Block Allocator:
 	if((uint32)virtual_address>=USER_HEAP_START && (uint32)virtual_address<=(myEnv->Break)){
 		free_block(virtual_address);
 	}
 
+	//Page Allocator:
 	else if((uint32)virtual_address>=(myEnv->hard_limit)+PAGE_SIZE && (uint32)virtual_address<USER_HEAP_MAX){
-
-//		struct allocatedtogether* my_pages = NULL;
-//		for(int i=0;i<U_ARR_SIZE;i++){
-//			if(Allpages[i].VA!=NULL && Allpages[i].VA==virtual_address)
-//			{
-//				my_pages = (struct allocatedtogether*)&(Allpages[i]);
-//				Allpages[i].VA = NULL;
-//				my_pages->size=0;
-//				break;
-//			}
-//		}
-//		if(my_pages!= NULL) {
-//			sys_free_user_mem((uint32)virtual_address,my_pages->size);
-//		}
 
 		uint32 VA;
 		int size;
 
+        //searching for the size of this VA in the array
 		for(int i=0;i<U_ARR_SIZE;i++){
 
-//			cprintf("VA: %d\n", Allpages[i].VA);
-//			cprintf("size: %d\n\n\n", Allpages[i].size);
+        //cprintf("VA: %d\n", Allpages[i].VA);
+        //cprintf("size: %d\n\n\n", Allpages[i].size);
 
 			if(Allpages[i].VA==(uint32*)virtual_address){
 
@@ -174,8 +165,8 @@ void free(void* virtual_address)
 
 		int no_Of_required_pages = ROUNDUP(size, PAGE_SIZE) / PAGE_SIZE;
 		VA = (uint32) virtual_address;
-
-		markAddressRangeAsFree(VA, no_Of_required_pages);
+        //mark it as free
+		markAddressAsFree(VA, no_Of_required_pages);
 		sys_free_user_mem(VA,size);
 	}
 
@@ -195,6 +186,9 @@ void* smalloc(char* sharedVarName, uint32 size, uint8 isWritable)
     // DON'T CHANGE THIS CODE
     if (size == 0) return NULL;
     //==============================================================
+    //TODO: [PROJECT'24.MS2 - #18] [4] SHARED MEMORY [USER SIDE] - smalloc()
+    // Write your code here, remove the panic and write your code
+    //panic("smalloc() is not implemented yet...!!");
 
     // Check if the size exceeds the available heap space
     if (size > (USER_HEAP_MAX - (USER_HEAP_START+ DYN_ALLOC_MAX_SIZE+PAGE_SIZE))) {
@@ -223,29 +217,6 @@ void* smalloc(char* sharedVarName, uint32 size, uint8 isWritable)
 
         first_va_found += PAGE_SIZE;
     }
-//	 while(first_va_found<USER_HEAP_MAX){
-//		 for(int i=0;i<U_ARR_SIZE;i++){
-//			 if(Allpages[i].VA!=NULL){
-//				 if(Allpages[i].VA==(void*)first_va_found){
-//					 pagesCounter=0;
-//					 first_va_found += ROUNDUP(Allpages[i].size,PAGE_SIZE);
-//					 found=1;
-//					 break;
-//				 }
-//			 }
-//		 }
-//		 if (found) {
-//		   continue;
-//		 }
-//
-//		 pagesCounter++;
-//		 if(pagesCounter==numOfPagesNeeded){
-//			first_va_found -= (numOfPagesNeeded - 1) * PAGE_SIZE;
-//			break;
-//		 }
-//		 first_va_found +=PAGE_SIZE;
-//	 }
-
 
     if (pagesCounter < numOfPagesNeeded) {
            cprintf("Not enough contiguous space in kernel heap\n");
@@ -256,7 +227,7 @@ void* smalloc(char* sharedVarName, uint32 size, uint8 isWritable)
        if(x==E_NO_SHARE||x==E_SHARED_MEM_EXISTS||x==E_NO_MEM){
        	return NULL;
        }
-       markAddressRangeAsAllocated(first_va_found, numOfPagesNeeded);
+       markAddressAsAllocated(first_va_found, numOfPagesNeeded);
        for(int i=0;i<USER_HEAP_MAX_PAGES;i++){
        		if(sharedBundles[i].VA==NULL){
        			sharedBundles[i].VA = (void*)first_va_found;
@@ -264,12 +235,12 @@ void* smalloc(char* sharedVarName, uint32 size, uint8 isWritable)
        			break;
        		}
        	}
-//       ((uint32*)first_va_found)[0]=-1;
-//       cprintf("what is in that location: %d \n",((uint32*)first_va_found)[0]);
-       //cprintf("expected va: %d \n",first_va_found);
-//       ((uint32*)first_va_found)[0]=-1;
-//       cprintf("trial 1: %d \n", ((uint32*)first_va_found)[0]);
-   	return (void*)first_va_found;
+         //((uint32*)first_va_found)[0]=-1;
+         //cprintf("what is in that location: %d \n",((uint32*)first_va_found)[0]);
+         //cprintf("expected va: %d \n",first_va_found);
+         //((uint32*)first_va_found)[0]=-1;
+         //cprintf("trial 1: %d \n", ((uint32*)first_va_found)[0]);
+     	return (void*)first_va_found;
 }
 
 
@@ -277,11 +248,12 @@ void* smalloc(char* sharedVarName, uint32 size, uint8 isWritable)
 // [5] SHARE ON ALLOCATED SHARED VARIABLE:
 //========================================
 void* sget(int32 ownerEnvID, char *sharedVarName){
-	//cprintf("entered sget! \n");
-	//cprintf("ownerEnvId: %d, sharedVarName: %s \n", ownerEnvID, sharedVarName);
 	//TODO: [PROJECT'24.MS2 - #20] [4] SHARED MEMORY [USER SIDE] - sget()
 	// Write your code here, remove the panic and write your code
 	//panic("sget() is not implemented yet...!!");
+
+	//cprintf("entered sget! \n");
+	//cprintf("ownerEnvId: %d, sharedVarName: %s \n", ownerEnvID, sharedVarName);
 	int size= sys_getSizeOfSharedObject(ownerEnvID,sharedVarName);
 	if(size==E_SHARED_MEM_NOT_EXISTS){
 		//cprintf("sget exited at E_SHARED_MEM_NOT_EXISTS \n");
@@ -325,7 +297,7 @@ void* sget(int32 ownerEnvID, char *sharedVarName){
 	           	return NULL;
 	     }
 
-	    markAddressRangeAsAllocated(first_va_found, numOfPagesNeeded);
+	    markAddressAsAllocated(first_va_found, numOfPagesNeeded);
 
 	    //cprintf("here is the virtual address returned: %d \n", (uint32)first_va_found);
 	return (void*)first_va_found;
