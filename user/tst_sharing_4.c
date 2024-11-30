@@ -101,19 +101,15 @@ _main(void)
 	{
 		uint32 *w, *u;
 		int freeFrames = sys_calculate_free_frames() ;
-		cprintf("before allocation of w and u!\n");
 		w = smalloc("w", 3 * PAGE_SIZE+1, 1);
 		u = smalloc("u", PAGE_SIZE, 1);
-		cprintf("after allocation of w and u!\n");
 
 		expected = 5+1 ; /*5pages +1table*/
 		diff = (freeFrames - sys_calculate_free_frames());
 		if (diff < expected || diff > expected +1+1 /*extra 1 page & 1 table for sbrk (at max)*/)
 			{is_correct = 0; cprintf("Wrong allocation (current=%d, expected=%d): make sure that you allocate the required space in the user environment and add its frames to frames_storage", freeFrames - sys_calculate_free_frames(), expected);}
 
-		cprintf("before freeing w!\n");
 		sfree(w);
-		cprintf("after freeing w!\n");
 
 		expected = 1+1 ; /*1page +1table*/
 		diff = (freeFrames - sys_calculate_free_frames());
@@ -121,9 +117,7 @@ _main(void)
 
 		uint32 *o;
 
-		cprintf("before allocating o!\n");
 		o = smalloc("o", 2 * PAGE_SIZE-1,1);
-		cprintf("after allocating o!\n");
 
 
 		expected = 3+1 ; /*3pages +1table*/
@@ -131,18 +125,14 @@ _main(void)
 		if (diff != expected /*Exact! since it's not expected that to invloke sbrk due to the prev. sfree*/)
 			{is_correct = 0; cprintf("Wrong allocation (current=%d, expected=%d): make sure that you allocate the required space in the user environment and add its frames to frames_storage", freeFrames - sys_calculate_free_frames(), expected);}
 
-		cprintf("before freeing o!\n");
 		sfree(o);
-		cprintf("after freeing o!\n");
 
 
 		expected = 1+1 ; /*1page +1table*/
 		diff = (freeFrames - sys_calculate_free_frames());
 		if (diff != expected) {is_correct = 0; cprintf("Wrong free: revise your freeSharedObject logic. Expected = %d, Actual = %d", expected, (freeFrames - sys_calculate_free_frames()));}
 
-		cprintf("before freeing u!\n");
 		sfree(u);
-		cprintf("after freeing w!\n");
 
 
 		expected = 0;
@@ -162,15 +152,12 @@ _main(void)
 			{is_correct = 0; cprintf("Wrong allocation (current=%d, expected=%d): make sure that you allocate the required space in the user environment and add its frames to frames_storage", freeFrames - sys_calculate_free_frames(), expected);}
 
 		freeFrames = sys_calculate_free_frames() ;
-		cprintf("1 free o\n");
 		sfree(o);
 
 //		if ((freeFrames - sys_calculate_free_frames()) !=  2560+3+5) {is_correct = 0; cprintf("Wrong free: check your logic");
-		cprintf("2 free w\n");
 
 		sfree(w);
 //		if ((freeFrames - sys_calculate_free_frames()) !=  1792+3+3) {is_correct = 0; cprintf("Wrong free: check your logic");
-		cprintf("3 free u\n");
 		sfree(u);
 
 		expected = 3073+4+4;

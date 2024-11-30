@@ -368,6 +368,7 @@ int freeSharedObject(int32 sharedObjectID, void *startVA)
 	//Your Code is Here...
 	struct Env* myenv = get_cpu_proc(); //The calling environment
 //	cprintf("the startVA: %x \n", startVA);
+    acquire_spinlock(&AllShares.shareslock);
 	struct Share* current;
 	bool found=0;
 	LIST_FOREACH(current,&(AllShares.shares_list)){
@@ -377,6 +378,7 @@ int freeSharedObject(int32 sharedObjectID, void *startVA)
 		}
 
 	}
+
 	if(!found){
 		return E_NO_SHARE;
 	}
@@ -415,17 +417,22 @@ int freeSharedObject(int32 sharedObjectID, void *startVA)
 				}
 			}
 		}
-
 		free_share(current);
+
 	}
 	else{
+		cprintf("no of refs to shared object: %d \n", current->references);
 		for (uint32 i = (uint32)startVA; i < ((uint32)startVA+ROUNDUP(current->size, PAGE_SIZE)); i += PAGE_SIZE) {
-									unmap_frame(myenv->env_page_directory, i);
-								}
+			cprintf("unmapped here!\n");
+			unmap_frame(myenv->env_page_directory, i);
+		}
 
 	}
 	//tlb_invalidate(myenv->env_page_directory,(uint32)startVA);
+
 	tlbflush();
+    release_spinlock(&AllShares.shareslock);
+
 
 	return 0;
 
