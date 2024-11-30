@@ -340,7 +340,7 @@ void sfree(void* virtual_address)
 	uint32 size =0;
 	bool found=0;
 	for(int i=0;i<USER_HEAP_MAX_PAGES;i++){
-			cprintf("this is the current va in the array at %d : %x \n", i, sharedBundles[i].VA);
+//			cprintf("this is the current va in the array at %d : %x \n", i, sharedBundles[i].VA);
 			found=(uint32)sharedBundles[i].VA==(uint32)virtual_address;
 			if(found){
 				ID=sharedBundles[i].ID;
@@ -349,14 +349,14 @@ void sfree(void* virtual_address)
 			}
 		}
 		if(found){
-			markAddressRangeAsFree((uint32)virtual_address,ROUNDUP(size,PAGE_SIZE)/PAGE_SIZE);
-			cprintf("found the shared object, va: %x id: %x \n", virtual_address, ID);
+			markAddressAsFree((uint32)virtual_address,ROUNDUP(size,PAGE_SIZE)/PAGE_SIZE);
+//			cprintf("found the shared object, va: %x id: %x \n", virtual_address, ID);
 			sys_freeSharedObject(ID,virtual_address);
-			cprintf("returned from freeSharedObject \n");
+//			cprintf("returned from freeSharedObject \n");
 			for(int i=0;i<=USER_HEAP_MAX_PAGES;i++){
-				cprintf("looking for the deleted object \n");
+//				cprintf("looking for the deleted object \n");
 				if((uint32)sharedBundles[i].VA==(uint32)virtual_address){
-					cprintf("successfully found the object \n");
+//					cprintf("successfully found the object \n");
 
 					sharedBundles[i].ID=0;
 					sharedBundles[i].VA=NULL;

@@ -180,6 +180,9 @@ void* kmalloc(unsigned int size)
 	// use "isKHeapPlacementStrategyFIRSTFIT() ..." functions to check the current strategy
 
      //cprintf("The Size equals %d \n",size);
+	if(!isKHeapPlacementStrategyFIRSTFIT()){
+		return NULL;
+	}
 	 if (size == 0 || size > (KERNEL_HEAP_MAX - KERNEL_HEAP_START)) {
 			        cprintf("Invalid size for kmalloc: %u\n", size);
 			        return NULL;
@@ -269,6 +272,7 @@ void* kmalloc(unsigned int size)
 			   //cprintf("add returned from kmalloc  %d \n" ,(void*)first_va_found);
 
 			    return (void*)first_va_found;
+
 }
 
 
@@ -420,6 +424,55 @@ void *krealloc(void *virtual_address, uint32 new_size)
 {
 	//TODO: [PROJECT'24.MS2 - BONUS#1] [1] KERNEL HEAP - krealloc
 	// Write your code here, remove the panic and write your code
-	return NULL;
-	panic("krealloc() is not implemented yet...!!");
-}
+	//panic("krealloc() is not implemented yet...!!");
+	if(virtual_address==NULL){
+	  return kmalloc(new_size);
+	}
+	if(new_size==0){
+		kfree(virtual_address);
+	}
+	else{
+	//if its page allocated
+	if((uint32)virtual_address>=hard_limit+PAGE_SIZE && (uint32)virtual_address<=KERNEL_HEAP_MAX){
+		struct allocated_together* my_pages = NULL;
+		int oldSize;
+		for(int i=0;i<ARR_SIZE;i++){//looping over the list to find the old size
+			if(pages_together[i].VA!=NULL && pages_together[i].VA==virtual_address){
+				oldSize=pages_together[i].size;
+				  break;
+			  }
+		}
+		if(new_size<oldSize){//shrinking
+			if(new_size>=DYN_ALLOC_MAX_BLOCK_SIZE){//still page allocated
+			kfree(virtual_address);
+			return kmalloc(new_size);
+
+		 }
+			else{//will be block allocated
+				kfree(virtual_address);
+				return alloc_block_FF(new_size);
+			}
+
+		   }
+		else if(new_size>oldSize){//maximizing
+			kfree(virtual_address);
+			return kmalloc(new_size);
+		}
+	      }
+	if((uint32)virtual_address>=KERNEL_HEAP_START && (uint32)virtual_address<=Break){//if its block allocated
+		int oldSize = get_block_size(virtual_address);
+		if(new_size<oldSize){//minimizing,then it still will be a block
+			return realloc_block_FF(virtual_address,new_size);
+		}
+		else{//maximizing
+			if(new_size<=DYN_ALLOC_MAX_BLOCK_SIZE){//still will be a block
+				return realloc_block_FF(virtual_address,new_size);
+			}
+			else {//will be page allocated
+			return kmalloc(new_size);
+			 }
+	       }
+		 }
+	}
+        return NULL;
+	}

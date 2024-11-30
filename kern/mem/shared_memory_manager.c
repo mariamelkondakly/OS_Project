@@ -401,7 +401,7 @@ int freeSharedObject(int32 sharedObjectID, void *startVA)
 		for (uint32 i = (uint32)startVA; i < ((uint32)startVA+ROUNDUP(current->size, PAGE_SIZE)); i += PAGE_SIZE) {
 			ptr =get_frame_info(myenv->env_page_directory, (uint32)i, &ptr_page_table);
 
-			cprintf("startVA: %x , page table pointer: %x \n",i, ptr_page_table);
+//			cprintf("startVA: %x , page table pointer: %x \n",i, ptr_page_table);
 			if(ptr!= NULL){
 				unmap_frame(myenv->env_page_directory, i);
 			}
@@ -410,7 +410,7 @@ int freeSharedObject(int32 sharedObjectID, void *startVA)
 	//		pd_used =pd_is_table_used(myenv->env_page_directory,i);
 			if(!isTableUsed(ptr_page_table)){
 				if(ptr_page_table!=NULL&&ptr_page_table!=0){
-				    cprintf("PAGE TABLE DELETED HERE! \n");
+//				    cprintf("PAGE TABLE DELETED HERE! \n");
 					pd_clear_page_dir_entry(myenv->env_page_directory,(uint32)i);
 
 					unmap_frame(myenv->env_page_directory,(uint32) ptr_page_table);
@@ -421,9 +421,9 @@ int freeSharedObject(int32 sharedObjectID, void *startVA)
 
 	}
 	else{
-		cprintf("no of refs to shared object: %d \n", current->references);
+//		cprintf("no of refs to shared object: %d \n", current->references);
 		for (uint32 i = (uint32)startVA; i < ((uint32)startVA+ROUNDUP(current->size, PAGE_SIZE)); i += PAGE_SIZE) {
-			cprintf("unmapped here!\n");
+//			cprintf("unmapped here!\n");
 			unmap_frame(myenv->env_page_directory, i);
 		}
 
