@@ -35,6 +35,7 @@ struct allocatedtogether Allpages[U_ARR_SIZE];
 struct sharedBundle{
 	int32 ID ;
 	void* VA;
+	uint32 size;
 };
 struct sharedBundle sharedBundles[USER_HEAP_MAX_PAGES];
 
@@ -228,19 +229,21 @@ void* smalloc(char* sharedVarName, uint32 size, uint8 isWritable)
        	return NULL;
        }
        markAddressAsAllocated(first_va_found, numOfPagesNeeded);
-       for(int i=0;i<USER_HEAP_MAX_PAGES;i++){
-       		if(sharedBundles[i].VA==NULL){
-       			sharedBundles[i].VA = (void*)first_va_found;
-       			sharedBundles[i].ID = x;
-       			break;
-       		}
-       	}
-         //((uint32*)first_va_found)[0]=-1;
-         //cprintf("what is in that location: %d \n",((uint32*)first_va_found)[0]);
-         //cprintf("expected va: %d \n",first_va_found);
-         //((uint32*)first_va_found)[0]=-1;
-         //cprintf("trial 1: %d \n", ((uint32*)first_va_found)[0]);
-     	return (void*)first_va_found;
+       for(int i=0; i<USER_HEAP_MAX_PAGES;i++){
+			   if(sharedBundles[i].VA==NULL){
+			   sharedBundles[i].VA=(void*)first_va_found;
+			   sharedBundles[i].ID=x;
+			   sharedBundles[i].size=size;
+			   break;
+		   }
+		 }
+//       ((uint32*)first_va_found)[0]=-1;
+//       cprintf("what is in that location: %d \n",((uint32*)first_va_found)[0]);
+       //cprintf("expected va: %d \n",first_va_found);
+//       ((uint32*)first_va_found)[0]=-1;
+//       cprintf("trial 1: %d \n", ((uint32*)first_va_found)[0]);
+   	return (void*)first_va_found;
+
 }
 
 
@@ -298,6 +301,15 @@ void* sget(int32 ownerEnvID, char *sharedVarName){
 	     }
 
 	    markAddressAsAllocated(first_va_found, numOfPagesNeeded);
+	    for(int i=0; i<USER_HEAP_MAX_PAGES;i++){
+		   if(sharedBundles[i].VA==NULL){
+		   sharedBundles[i].VA=(void*)first_va_found;
+		   sharedBundles[i].ID=x;
+		   sharedBundles[i].size=size;
+		   break;
+	   }
+	  }
+
 
 	    //cprintf("here is the virtual address returned: %d \n", (uint32)first_va_found);
 	return (void*)first_va_found;
@@ -318,16 +330,44 @@ void* sget(int32 ownerEnvID, char *sharedVarName){
 //	use sys_freeSharedObject(...); which switches to the kernel mode,
 //	calls freeSharedObject(...) in "shared_memory_manager.c", then switch back to the user mode here
 //	the freeSharedObject() function is empty, make sure to implement it.
-
 void sfree(void* virtual_address)
 {
 	//TODO: [PROJECT'24.MS2 - BONUS#4] [4] SHARED MEMORY [USER SIDE] - sfree()
 	// Write your code here, remove the panic and write your code
-	panic("sfree() is not implemented yet...!!");
+	//panic("sfree() is not implemented yet...!!");
 
-}
+	int32 ID;
+	uint32 size =0;
+	bool found=0;
+	for(int i=0;i<USER_HEAP_MAX_PAGES;i++){
+			cprintf("this is the current va in the array at %d : %x \n", i, sharedBundles[i].VA);
+			found=(uint32)sharedBundles[i].VA==(uint32)virtual_address;
+			if(found){
+				ID=sharedBundles[i].ID;
+				size = sharedBundles[i].size;
+				break;
+			}
+		}
+		if(found){
+			markAddressRangeAsFree((uint32)virtual_address,ROUNDUP(size,PAGE_SIZE)/PAGE_SIZE);
+			cprintf("found the shared object, va: %x id: %x \n", virtual_address, ID);
+			sys_freeSharedObject(ID,virtual_address);
+			cprintf("returned from freeSharedObject \n");
+			for(int i=0;i<=USER_HEAP_MAX_PAGES;i++){
+				cprintf("looking for the deleted object \n");
+				if((uint32)sharedBundles[i].VA==(uint32)virtual_address){
+					cprintf("successfully found the object \n");
 
+					sharedBundles[i].ID=0;
+					sharedBundles[i].VA=NULL;
+					sharedBundles[i].size=0;
+					break;
+				}
+			}
 
+			}
+
+		}
 //=================================
 // REALLOC USER SPACE:
 //=================================
