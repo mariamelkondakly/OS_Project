@@ -139,7 +139,7 @@ void set_block_data(void* va, uint32 totalSize, bool isAllocated)
 {
 	//TODO: [PROJECT'24.MS1 - #05] [3] DYNAMIC ALLOCATOR - set_block_data
 	//COMMENT THE FOLLOWING LINE BEFORE START CODING
-//	panic("set_block_data is not implemented yet");
+    //panic("set_block_data is not implemented yet");
 	//Your Code is Here...
 	if(totalSize%2!=0){
 		totalSize++;
@@ -188,6 +188,7 @@ void *alloc_block_FF(uint32 size)
 	//COMMENT THE FOLLOWING LINE BEFORE START CODING
 	//panic("alloc_block_FF is not implemented yet");
 	//Your Code is Here...
+
 	//cprintf("da5al block alloc \n");
 	int total_size = (int)size + 8; // Adjust for metadata
 
@@ -240,12 +241,12 @@ void *alloc_block_FF(uint32 size)
 		*END=1;
 
 		set_block_data((uint32*)sbrkReturn,finalSize,1);
-						//cprintf("after setting! \n \n");
+		//cprintf("after setting! \n \n");
 
-							    free_block((uint32*)sbrkReturn);
-								//cprintf("after freeing! \n \n");
+	    free_block((uint32*)sbrkReturn);
+		//cprintf("after freeing! \n \n");
 
-				return alloc_block_FF(size);
+	    return alloc_block_FF(size);
 
 
 //	    struct BlockElement* lastFreeBlock = LIST_LAST(&freeBlocksList);
@@ -271,7 +272,7 @@ void *alloc_block_BF(uint32 size)
 	//COMMENT THE FOLLOWING LINE BEFORE START CODING
 	//panic("alloc_block_BF is not implemented yet");
     //Your Code is Here...
-if (size == 0) {
+    if (size == 0) {
 			cprintf("Size cant be 0");
 			return NULL;
 			}
@@ -315,29 +316,27 @@ if (size == 0) {
 			}
 	}
 	int noOfPagesNeeded=ROUNDUP(total_size,PAGE_SIZE)/PAGE_SIZE;
-	    	cprintf("numofpagesneeded is: %d \n \n", noOfPagesNeeded);
+	//cprintf("numofpagesneeded is: %d \n \n", noOfPagesNeeded);
 
-			uint32 sbrkReturn=(uint32)sbrk(noOfPagesNeeded);
-	    	cprintf("sbrk returns: %d \n \n", sbrkReturn);
+    uint32 sbrkReturn=(uint32)sbrk(noOfPagesNeeded);
+	//cprintf("sbrk returns: %d \n \n", sbrkReturn);
 
-		    if(sbrkReturn==-1){
-		    	cprintf("1.4 this returned at line 232 \n \n");
-		    	return NULL; // No suitable block found
-		    }
+    if(sbrkReturn==-1){
+	   //cprintf("1.4 this returned at line 232 \n \n");
+	   return NULL; // No suitable block found
+	}
 
-			uint32 finalSize=noOfPagesNeeded*PAGE_SIZE;
+	uint32 finalSize=noOfPagesNeeded*PAGE_SIZE;
 
-			uint32* END=(uint32*)((uint32)sbrk(0)-4);
-			*END=1;
+	uint32* END=(uint32*)((uint32)sbrk(0)-4);
+	*END=1;
 
-			set_block_data((uint32*)sbrkReturn,finalSize,1);
-							//cprintf("after setting! \n \n");
+	set_block_data((uint32*)sbrkReturn,finalSize,1);
+	//cprintf("after setting! \n \n");
 
-								    free_block((uint32*)sbrkReturn);
-									//cprintf("after freeing! \n \n");
-					return alloc_block_FF(size);
-
-
+    free_block((uint32*)sbrkReturn);
+	//cprintf("after freeing! \n \n");
+	return alloc_block_BF(size);
 
 }
 
@@ -360,8 +359,6 @@ void free_block(void *va)
     }
 	else{
 
-//		test_free_block_FF
-
 		uint32* prevFooter = (uint32*)((uint32)(va-8));
 		uint32 prevSize = *prevFooter & ~1 ;  //there's an extra bit we need to minus here!!!!!!!!!!
 		uint32* prevVa = (uint32*)((uint32)prevFooter-prevSize+8);
@@ -377,7 +374,7 @@ void free_block(void *va)
 			 set_block_data(va,blockSize,0);
 		}
 		else if((is_free_block(prevVa)==1)&&(is_free_block(nextVa)==1)){//merge
-			cprintf("when both of the prev & next is free");
+			//cprintf("when both of the prev & next is free");
 
 			uint32 totalNewBlockSize = prevSize + nextSize + blockSize;
 
@@ -404,7 +401,7 @@ void free_block(void *va)
 
 		}
 		else{
-			cprintf("when the next is free");
+			//cprintf("when the next is free");
 			uint32 totalNewBlockSize =  nextSize + blockSize;
 
 			newBlock =(struct BlockElement*)va;
@@ -439,36 +436,36 @@ void *realloc_block_FF(void* va, uint32 new_size)
 {
 	//TODO: [PROJECT'24.MS1 - #08] [3] DYNAMIC ALLOCATOR - realloc_block_FF
 	//COMMENT THE FOLLOWING LINE BEFORE START CODING
-//	panic("realloc_block_FF is not implemented yet");
+    //panic("realloc_block_FF is not implemented yet");
 	//Your Code is Here...
 	//comment here
-if(new_size == 0){
-	free_block(va);
-    return NULL;
-	}
+  if(new_size == 0){
+	 free_block(va);
+     return NULL;
+  }
   else if(va == NULL){
 	   return alloc_block_FF(new_size);
-		   }
+  }
   else if(va == NULL && new_size == 0){
 	    return NULL;
-		   }
+  }
   else if( new_size < 8){
   	    return NULL;
-  		   }
+  }
 
   else{
 	new_size+=8;//for meta data H+F
-	cprintf("block size i want to get %d \n" , new_size) ;
-	cprintf("block add i got %p \n" , va) ;
+	//cprintf("block size i want to get %d \n" , new_size) ;
+	//cprintf("block add i got %p \n" , va) ;
 
 	uint32 blockOriginalSize = get_block_size(va);
 	int diffMin = blockOriginalSize - new_size; // new_size smaller than original
 	int diffMax = new_size - blockOriginalSize; // Original smaller than new_size
 
-	cprintf("block size before (original block size) %d \n" , get_block_size(va) );
-	cprintf("expected block size  %d \n" , new_size );
-	cprintf("diffMin size  %d \n" , diffMin );
-	cprintf("diffMax size  %d \n" , diffMax );
+	//cprintf("block size before (original block size) %d \n" , get_block_size(va) );
+	//cprintf("expected block size  %d \n" , new_size );
+	//cprintf("diffMin size  %d \n" , diffMin );
+	//cprintf("diffMax size  %d \n" , diffMax );
 
 
 	uint32* nextHeader = (uint32*)((uint32)(va+blockOriginalSize-4));
@@ -478,20 +475,17 @@ if(new_size == 0){
 if(blockOriginalSize > new_size ){  // minimize block
 
 		if( is_free_block(nextVa) == 1 ){
-
-//						 ######  NOT TESTED  #####
-//     DONE TESTEDDDDDD:)
 		struct BlockElement* nextBlock=(struct BlockElement*) nextVa;
 		struct BlockElement* splittedVa = (struct BlockElement*)((uint32)va + new_size) ;
 		LIST_INSERT_BEFORE(&freeBlocksList,nextBlock,splittedVa);
 		LIST_REMOVE(&freeBlocksList,nextBlock);
 		set_block_data(splittedVa,diffMin+nextSize,0);
 		set_block_data(va,new_size,1);
-		cprintf("the  blockOriginal size : %d \n \n", blockOriginalSize);
-		cprintf("the  new size : %d \n \n", new_size);
-		cprintf("the size of the min difference: %d \n \n",diffMin);
-		cprintf("the  nextblock size : %d \n \n", nextSize);
-		cprintf("the  splitedblock  size : %d \n \n", get_block_size(splittedVa));
+		//cprintf("the  blockOriginal size : %d \n \n", blockOriginalSize);
+		//cprintf("the  new size : %d \n \n", new_size);
+		//cprintf("the size of the min difference: %d \n \n",diffMin);
+		//cprintf("the  nextblock size : %d \n \n", nextSize);
+		//cprintf("the  splitedblock  size : %d \n \n", get_block_size(splittedVa));
 		return (struct BlockElement*) va;
 
 
@@ -523,12 +517,12 @@ else if(is_free_block(nextVa) == 0){    // is_free_block(nextVa) == 0  && no spa
 }
 }
 else{  //  maximize  blockOriginalSize < new_size
-	cprintf("the size of the next block: %d \n \n",nextSize);
-	cprintf("the size of the max difference: %d \n \n",diffMax);
+	//cprintf("the size of the next block: %d \n \n",nextSize);
+	//cprintf("the size of the max difference: %d \n \n",diffMax);
 	if( is_free_block(nextVa) == 1 && nextSize >= diffMax){
 	//no relocate no split TESTED
 	if( nextSize < diffMax+16){
-// make it accepted when nextSize = diffMax & when it's splited & next_after_split < 16 ( internal fragmentation)
+    //make it accepted when nextSize = diffMax & when it's splited & next_after_split < 16 ( internal fragmentation)
 	   struct BlockElement* nextBlock = (struct BlockElement*) nextVa;
 	   LIST_REMOVE(&freeBlocksList, nextBlock);
 		set_block_data(va, blockOriginalSize+nextSize, 1);
@@ -551,16 +545,12 @@ else{  //  maximize  blockOriginalSize < new_size
 		}
         }
 	else { // no space around
-		//######NOT TESTED #######
 		free_block(va);
 		return alloc_block_FF( new_size-8 );}
       }
   }
-	//  ####### NOT TESTED ######
 	sbrk(new_size);
 	return NULL; // No suitable block found
-
-
 }
 
 

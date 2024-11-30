@@ -148,23 +148,24 @@ void fault_handler(struct Trapframe *tf)
 		if (userTrap)
 		{
 			/*============================================================================================*/
-									//TODO: [PROJECT'24.MS2 - #08] [2] FAULT HANDLER I - Check for invalid pointers
-									//(e.g. pointing to unmarked user heap page, kernel or wrong access rights),
-									//your code is here
-									 //cprintf("Entered checking for invalid pointers\n");
-			 uint32 page_perm = pt_get_page_permissions(faulted_env->env_page_directory,fault_va);
+				//TODO: [PROJECT'24.MS2 - #08] [2] FAULT HANDLER I - Check for invalid pointers
+				//(e.g. pointing to unmarked user heap page, kernel or wrong access rights),
+				//your code is here
 
-												 int MarkedBit=(page_perm &(1<<10));
-												if(fault_va >= USER_HEAP_START && fault_va < USER_HEAP_MAX && MarkedBit==0){
-												 env_exit();
-												}
-												if(fault_va >USER_LIMIT)
-												{
-												env_exit();
-												}
-												if(!(page_perm & PERM_WRITEABLE)&&(page_perm & PERM_PRESENT)){
-											    env_exit();
-											    }
+				//cprintf("Entered checking for invalid pointers\n");
+			    uint32 page_perm = pt_get_page_permissions(faulted_env->env_page_directory,fault_va);
+
+				int MarkedBit=(page_perm &(1<<10));
+				if(fault_va >= USER_HEAP_START && fault_va < USER_HEAP_MAX && MarkedBit==0){
+					env_exit();
+				}
+				if(fault_va >USER_LIMIT)
+				{
+					env_exit();
+				}
+				if(!(page_perm & PERM_WRITEABLE)&&(page_perm & PERM_PRESENT)){
+					 env_exit();
+			    }
 			/*============================================================================================*/
 		}
 
@@ -236,56 +237,55 @@ void page_fault_handler(struct Env * faulted_env, uint32 fault_va)
 #endif
 
 		if(wsSize < (faulted_env->page_WS_max_size))
-							{
-								        //cprintf("PLACEMENT=========================WS Size = %d\n", wsSize );
-										//TODO: [PROJECT'24.MS2 - #09] [2] FAULT HANDLER I - Placement
-										// Write your code here, remove the panic and write your code
-										//panic("page_fault_handler().PLACEMENT is not implemented yet...!!");
-			//cprintf("da5al placement \n");
+		{
+		  //cprintf("PLACEMENT=========================WS Size = %d\n", wsSize );
+		  //TODO: [PROJECT'24.MS2 - #09] [2] FAULT HANDLER I - Placement
+		  // Write your code here, remove the panic and write your code
+		  //panic("page_fault_handler().PLACEMENT is not implemented yet...!!");
 
-										int existsInDisk=0;
-										struct FrameInfo *frame=NULL;
-						                int alloc_ret = allocate_frame(&frame);
-									    if (alloc_ret == E_NO_MEM){
-									    cprintf("NO MEMORY ....");
-									    return;
-									    }
-										int map_ret = map_frame(faulted_env->env_page_directory,frame,fault_va,PERM_PRESENT|PERM_WRITEABLE| PERM_USER);
-										if (map_ret == E_NO_MEM){
-										free_frame(frame);
-										cprintf("NO MEMORY ....");
-								    	return;
-										}
-										int ret = pf_read_env_page(faulted_env,(void*)fault_va);
-										if(ret== E_PAGE_NOT_EXIST_IN_PF){
-											if(((fault_va>=USER_HEAP_START&&fault_va<=USER_HEAP_MAX)||(fault_va>=USTACKBOTTOM&&fault_va<=USTACKTOP)))
-											{
-												//add the page in the working set list & update its last one
-											struct WorkingSetElement* FaultedElement = env_page_ws_list_create_element(faulted_env,fault_va);
-											LIST_INSERT_TAIL(&(faulted_env->page_WS_list),FaultedElement);
-											if(wsSize+1 < (faulted_env->page_WS_max_size))
-											{
-											faulted_env->page_last_WS_element=NULL;
-											}
-											else{
-											faulted_env->page_last_WS_element=LIST_FIRST(&(faulted_env->page_WS_list));
-											}
-											return;
-											}
-											else{
-											unmap_frame(faulted_env->env_page_directory,fault_va);
-											//free_frame(frame);
-											cprintf("baraaa 3shan mesh stack aw heap \n");
-											env_exit();
-											}
+		  //cprintf("da5al placement \n");
 
-										}
-										else{
-											unmap_frame(faulted_env->env_page_directory,fault_va);
-											env_exit();
-										}
+		  // Allocating and Mapping
+	      struct FrameInfo *frame=NULL;
+		  int alloc_ret = allocate_frame(&frame);
+		  if (alloc_ret == E_NO_MEM){
+		     cprintf("NO MEMORY ....");
+		     return;
+		  }
+		  int map_ret = map_frame(faulted_env->env_page_directory,frame,fault_va,PERM_PRESENT|PERM_WRITEABLE| PERM_USER);
+		  if (map_ret == E_NO_MEM){
+			 free_frame(frame);
+		     cprintf("NO MEMORY ....");
+			 return;
+		}
+		  //checking if it exists in disk
+		int ret = pf_read_env_page(faulted_env,(void*)fault_va);
+		//doesn't exist in disk
+		if(ret== E_PAGE_NOT_EXIST_IN_PF){
+			//heap or stack
+			if(((fault_va>=USER_HEAP_START&&fault_va<=USER_HEAP_MAX)||(fault_va>=USTACKBOTTOM&&fault_va<=USTACKTOP)))
+			{
+				//add the page in the working set list & update its last one
+				struct WorkingSetElement* FaultedElement = env_page_ws_list_create_element(faulted_env,fault_va);
+				LIST_INSERT_TAIL(&(faulted_env->page_WS_list),FaultedElement);
+				if(wsSize+1 < (faulted_env->page_WS_max_size))
+				{
+					faulted_env->page_last_WS_element=NULL;
+				}
+				else{
+					faulted_env->page_last_WS_element=LIST_FIRST(&(faulted_env->page_WS_list));
+				}
+				return;
+			}
+			else{//not heap or stack
+				unmap_frame(faulted_env->env_page_directory,fault_va);
+				//free_frame(frame);
+				//cprintf("baraaa 3shan mesh stack aw heap \n");
+				env_exit();
+			}
 
-							}
+        }
+     }
 
 	else
 	{
