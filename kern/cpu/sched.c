@@ -252,10 +252,14 @@ void sched_init_PRIRR(uint8 numOfPriorities, uint8 quantum, uint32 starvThresh)
 	panic("Not implemented yet");
 
 
+	num_of_ready_queues = numOfPriorities;
 
+	kclock_set_quan(quantum);
+	sched_set_starv_thresh(starvThresh);
 
-
-
+	env_ready_queues
+//	int size = 5; // Size of the array
+//	arr = (int *)malloc(size * sizeof(int)); // Allocate memory for 5 integers
 
 
 

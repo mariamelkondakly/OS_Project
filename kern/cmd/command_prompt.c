@@ -452,6 +452,13 @@ int execute_command(char *command_string)
 	return 0;
 }
 
+int sched_init_PRIRR_Command(int number_of_arguments, char **arguments){
+
+	//void sched_init_PRIRR(uint8 numOfPriorities, uint8 quantum, uint32 starvThresh)
+
+	sched_init_PRIRR(arguments[0], arguments[1], arguments[2]);
+}
+
 
 int process_command(int number_of_arguments, char** arguments)
 {
