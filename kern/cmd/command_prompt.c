@@ -456,7 +456,7 @@ int sched_init_PRIRR_Command(int number_of_arguments, char **arguments){
 
 	//void sched_init_PRIRR(uint8 numOfPriorities, uint8 quantum, uint32 starvThresh)
 
-	sched_init_PRIRR(arguments[0], arguments[1], arguments[2]);
+	sched_init_PRIRR((uint8)arguments[0], (uint8)arguments[1], (uint32)arguments[2]);
 }
 
 

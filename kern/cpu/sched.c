@@ -249,18 +249,27 @@ void sched_init_PRIRR(uint8 numOfPriorities, uint8 quantum, uint32 starvThresh)
 	//TODO: [PROJECT'24.MS3 - #07] [3] PRIORITY RR Scheduler - sched_init_PRIRR
 	//Your code is here
 	//Comment the following line
-	panic("Not implemented yet");
+	//panic("Not implemented yet");
 
+	sched_delete_ready_queues();
+
+	quantums = kmalloc(numOfPriorities * sizeof(uint8)) ;
 
 	num_of_ready_queues = numOfPriorities;
-
-	kclock_set_quan(quantum);
+	kclock_set_quantum(quantums[0]);
 	sched_set_starv_thresh(starvThresh);
 
-	env_ready_queues
-//	int size = 5; // Size of the array
-//	arr = (int *)malloc(size * sizeof(int)); // Allocate memory for 5 integers
 
+	// msh mt2kda mnha lsa bs de RR ely mwgoda given
+	ProcessQueues.env_ready_queues = (uint8*)kmalloc(numOfPriorities * sizeof(uint8));
+
+	// other initializations
+	init_queue(&ProcessQueues.env_exit_queue);
+	init_queue(&ProcessQueues.env_new_queue);
+
+	for(int i=0;i<numOfPriorities;i++){
+		init_queue(&(ProcessQueues.env_ready_queues[i]));
+	}
 
 
 	//=========================================
@@ -354,7 +363,34 @@ struct Env* fos_scheduler_PRIRR()
 	//TODO: [PROJECT'24.MS3 - #08] [3] PRIORITY RR Scheduler - fos_scheduler_PRIRR
 	//Your code is here
 	//Comment the following line
-	panic("Not implemented yet");
+//	panic("Not implemented yet");
+
+	struct Env *nxt_env = NULL;
+	struct Env *current_env = get_cpu_proc();
+
+	//  1 - If there’s a current process on the CPU, place it in the corresponding ready queue (do any required initializations)
+	if (current_env != NULL){
+		for(int i=0;i<num_of_ready_queues;i++){
+			if(current_env->priority == i){
+				enqueue(&(ProcessQueues.env_ready_queues[i]), current_env);
+				break;
+			}
+		}
+	}
+
+	//  2 -  Select the next environment to be run on the CPU and return it
+	for(int i=0;i<num_of_ready_queues;i++){
+		if(ProcessQueues.env_ready_queues[i].size>0){   // if there is at least one process in the queue, then take it and break
+			nxt_env = dequeue(&(ProcessQueues.env_ready_queues[i]));
+			break;
+		}
+	}
+
+	//  3 - REMEMBER to set the CPU quantum
+	kclock_set_quantum(quantums[0]);
+
+	return nxt_env;
+
 }
 
 //========================================
