@@ -10,12 +10,14 @@
 #include <kern/cmd/command_prompt.h>
 #include <kern/cpu/cpu.h>
 #include <kern/cpu/picirq.h>
+#include <kern/cpu/sched_helpers.h>
 
 
 uint32 isSchedMethodRR(){return (scheduler_method == SCH_RR);}
 uint32 isSchedMethodMLFQ(){return (scheduler_method == SCH_MLFQ); }
 uint32 isSchedMethodBSD(){return(scheduler_method == SCH_BSD); }
 uint32 isSchedMethodPRIRR(){return(scheduler_method == SCH_PRIRR); }
+//uint32 prevTicks=0;
 
 //===================================================================================//
 //============================ SCHEDULER FUNCTIONS ==================================//
@@ -404,8 +406,22 @@ void clock_interrupt_handler(struct Trapframe* tf)
 		//TODO: [PROJECT'24.MS3 - #09] [3] PRIORITY RR Scheduler - clock_interrupt_handler
 		//Your code is here
 		//Comment the following line
-		panic("Not implemented yet");
+		//panic("Not implemented yet");
+		//set the ticks to 0
+		struct Env* currentEnv;
+		for(int i=1; i<num_of_ready_queues;i++){
+			int noOfProcessesInAQueue=queue_size(&(ProcessQueues.env_ready_queues[i]));
+			for(int j=0; i<noOfProcessesInAQueue;j++){
+				currentEnv=dequeue(&(ProcessQueues.env_ready_queues[i]));
+				currentEnv->nClocks++;
+				if(currentEnv->nClocks==threshold){
+					currentEnv->priority--;
+				}
+				sched_insert_ready(currentEnv);
+			}
+		}
 	}
+
 
 
 

@@ -12,7 +12,6 @@
 
 //void on_clock_update_WS_time_stamps();
 extern void cleanup_buffers(struct Env* e);
-uint32 threshold;
 //================
 
 //=================================================================================//
