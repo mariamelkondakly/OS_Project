@@ -12,6 +12,7 @@
 
 //void on_clock_update_WS_time_stamps();
 extern void cleanup_buffers(struct Env* e);
+uint32 threshold;
 //================
 
 //=================================================================================//
@@ -733,4 +734,5 @@ void sched_set_starv_thresh(uint32 starvThresh)
 	//Your code is here
 	//Comment the following line
 //	panic("Not implemented yet");
+	threshold=starvThresh;
 }
