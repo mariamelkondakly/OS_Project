@@ -354,7 +354,50 @@ void sys_set_uheap_strategy(uint32 heapStrategy)
 /* SEMAPHORES SYSTEM CALLS */
 /*******************************/
 //[PROJECT'24.MS3] ADD SUITABLE CODE HERE
+void sys_init_queue(struct Env_Queue* queue)
+{
+	if(queue==NULL){//check lw fel user?
+		cprintf("returned in sys call \n");
+		return;
+	}
+	init_queue(queue);
+	return;
+}
+void sys_enqueue(struct Env_Queue* queue){
 
+	struct Env *current_process = get_cpu_proc();
+	enqueue(queue,current_process);
+	cprintf("han block \n");
+	current_process->env_status=ENV_BLOCKED;
+	cprintf("process is enqueued in kernel and blocked \n");
+	acquire_spinlock(&ProcessQueues.qlock);
+	sched();
+	release_spinlock(&ProcessQueues.qlock);
+	cprintf(" 5alas sched ? \n");
+
+	return;
+}
+void sys_sched(void){
+	sched();
+	return;
+}
+struct Env* sys_dequeue(struct Env_Queue* queue)
+{
+	struct Env* env = dequeue(queue);
+	return env;
+}
+void sys_sched_insert_ready(struct Env* env)
+{
+	cprintf("insert ready in kernel");
+	release_spinlock(&ProcessQueues.qlock);
+	sched_insert_ready(env);
+	release_spinlock(&ProcessQueues.qlock);
+	return;
+}
+int sys_queue_size(struct Env_Queue* queue)
+{
+	return queue_size(queue);
+}
 
 /*******************************/
 /* SHARED MEMORY SYSTEM CALLS */
@@ -522,6 +565,26 @@ uint32 syscall(uint32 syscallno, uint32 a1, uint32 a2, uint32 a3, uint32 a4, uin
 	case SYS_allocate_user_mem:
 		sys_allocate_user_mem((uint32) a1, (uint32) a2);
 		return 0;
+		break;
+
+		//semaphores!!
+	case SYS_init_queue:
+		sys_init_queue((struct Env_Queue*) a1);
+		return 0;
+		break;
+	case SYS_enqueue:
+		sys_enqueue((struct Env_Queue*) a1);
+		return 0;
+		break;
+	case SYS_dequeue:
+		return (uint32)sys_dequeue((struct Env_Queue*) a1);
+		break;
+	case SYS_sched_insert_ready:
+		sys_sched_insert_ready((struct Env*)a2);
+		return 0;
+		break;
+	case SYS_queue_size:
+		return sys_queue_size((struct Env_Queue*) a2);
 		break;
 
 	//======================================================================

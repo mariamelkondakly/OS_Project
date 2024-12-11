@@ -50,6 +50,8 @@ LIST_HEAD(Share_List, Share);		// Declares 'struct Share_List'
 		struct spinlock shareslock;		//Use it to protect the shares_list in the kernel
 	}AllShares;
 
+
+
 	void sharing_init();
 #endif
 

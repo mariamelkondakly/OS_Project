@@ -157,13 +157,16 @@ void fault_handler(struct Trapframe *tf)
 
 				int MarkedBit=(page_perm &(1<<10));
 				if(fault_va >= USER_HEAP_START && fault_va < USER_HEAP_MAX && MarkedBit==0){
+					cprintf("exit 1");
 					env_exit();
 				}
 				if(fault_va >USER_LIMIT)
 				{
+					cprintf("exit 2");
 					env_exit();
 				}
 				if(!(page_perm & PERM_WRITEABLE)&&(page_perm & PERM_PRESENT)){
+					cprintf("exit 3");
 					 env_exit();
 			    }
 			/*============================================================================================*/
@@ -280,7 +283,7 @@ void page_fault_handler(struct Env * faulted_env, uint32 fault_va)
 			else{//not heap or stack
 				unmap_frame(faulted_env->env_page_directory,fault_va);
 				//free_frame(frame);
-				//cprintf("baraaa 3shan mesh stack aw heap \n");
+				cprintf("baraaa 3shan mesh stack aw heap env %d \n", get_cpu_proc()->env_id);
 				env_exit();
 			}
 

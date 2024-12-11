@@ -316,6 +316,29 @@ void sys_allocate_user_mem(uint32 virtual_address, uint32 size)
 	//Comment the following line before start coding...
 	//panic("not implemented yet");
 	syscall(SYS_allocate_user_mem,virtual_address,size,0,0,0);
-
+}
+// semaphores sys calls!
+void sys_init_queue(struct Env_Queue* queue)
+{
+	cprintf("entered 1 ");
+	syscall(SYS_init_queue,(uint32)queue,0,0,0,0);
+}
+void sys_enqueue(struct Env_Queue* queue){
+	syscall(SYS_enqueue,(uint32)queue,0,0,0,0);
+}
+void sys_sched(void){
+	syscall(SYS_sched,0,0,0,0,0);
+}
+struct Env* sys_dequeue(struct Env_Queue* queue)
+{
+	return (struct Env*)syscall(SYS_dequeue,(uint32)queue,0,0,0,0);
+}
+void sys_sched_insert_ready(struct Env* env)
+{
+	syscall(SYS_sched_insert_ready,(uint32)env,0,0,0,0);
+}
+int sys_queue_size(struct Env_Queue* queue)
+{
+	return (int)syscall(SYS_queue_size,(uint32)queue,0,0,0,0);
 }
 

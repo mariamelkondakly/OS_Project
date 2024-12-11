@@ -27,6 +27,7 @@ _main(void)
 	//[1] Run programs that allocate many shared variables
 	for (int i = 0; i < numOfSlaves; ++i) {
 		int32 envId = sys_create_env("protection_slave1", (myEnv->page_WS_max_size),(myEnv->SecondListSize), (myEnv->percentage_of_WS_pages_to_be_removed));
+		cprintf("outer loop creates slave env %d \n",envId);
 		sys_run_env(envId);
 	}
 

@@ -52,6 +52,14 @@ enum
 	SYS_sbrk,
 	SYS_free_user_mem,
 	SYS_allocate_user_mem,
+
+	//semaphores!
+	SYS_init_queue,
+	SYS_enqueue,
+	SYS_sched,
+	SYS_dequeue,
+	SYS_sched_insert_ready,
+	SYS_queue_size,
 	//=====================================================================
 	NSYSCALLS
 };
