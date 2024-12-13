@@ -456,7 +456,16 @@ int sched_init_PRIRR_Command(int number_of_arguments, char **arguments){
 
 	//void sched_init_PRIRR(uint8 numOfPriorities, uint8 quantum, uint32 starvThresh)
 
-	sched_init_PRIRR((uint8)arguments[0], (uint8)arguments[1], (uint32)arguments[2]);
+	uint8 n1, n2;
+	uint32 n3;
+	n1 = strtol(arguments[0], NULL, 10);
+	n2 = strtol(arguments[1], NULL, 10);
+	n3 = strtol(arguments[2], NULL, 10);
+
+
+	sched_init_PRIRR(n1, n2, n3);
+
+	return 0;
 }
 
 

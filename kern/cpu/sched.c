@@ -255,7 +255,9 @@ void sched_init_PRIRR(uint8 numOfPriorities, uint8 quantum, uint32 starvThresh)
 
 	sched_delete_ready_queues();
 
+	cprintf("before : quantums = kmalloc(numOfPriorities * sizeof(uint8)) ; \n");
 	quantums = kmalloc(numOfPriorities * sizeof(uint8)) ;
+	cprintf("after : quantums = kmalloc(numOfPriorities * sizeof(uint8)) ; \n");
 
 	num_of_ready_queues = numOfPriorities;
 	kclock_set_quantum(quantums[0]);
@@ -263,7 +265,9 @@ void sched_init_PRIRR(uint8 numOfPriorities, uint8 quantum, uint32 starvThresh)
 
 
 	// msh mt2kda mnha lsa bs de RR ely mwgoda given
-	ProcessQueues.env_ready_queues = (uint8*)kmalloc(numOfPriorities * sizeof(uint8));
+	cprintf("before : ProcessQueues.env_ready_queues = kmalloc(numOfPriorities * sizeof(uint8)); \n");
+	ProcessQueues.env_ready_queues = kmalloc(numOfPriorities * sizeof(uint8));
+	cprintf("after : ProcessQueues.env_ready_queues = kmalloc(numOfPriorities * sizeof(uint8)); \n");
 
 	// other initializations
 	init_queue(&ProcessQueues.env_exit_queue);
@@ -372,21 +376,23 @@ struct Env* fos_scheduler_PRIRR()
 
 	//  1 - If there’s a current process on the CPU, place it in the corresponding ready queue (do any required initializations)
 	if (current_env != NULL){
-		for(int i=0;i<num_of_ready_queues;i++){
-			if(current_env->priority == i){
-				enqueue(&(ProcessQueues.env_ready_queues[i]), current_env);
-				break;
-			}
-		}
+		acquire_spinlock(&(ProcessQueues.qlock));
+
+		sched_insert_ready(current_env);
+
+		release_spinlock(&(ProcessQueues.qlock));
 	}
 
 	//  2 -  Select the next environment to be run on the CPU and return it
+	acquire_spinlock(&(ProcessQueues.qlock));
 	for(int i=0;i<num_of_ready_queues;i++){
 		if(ProcessQueues.env_ready_queues[i].size>0){   // if there is at least one process in the queue, then take it and break
 			nxt_env = dequeue(&(ProcessQueues.env_ready_queues[i]));
 			break;
 		}
 	}
+	release_spinlock(&(ProcessQueues.qlock));
+
 
 	//  3 - REMEMBER to set the CPU quantum
 	kclock_set_quantum(quantums[0]);

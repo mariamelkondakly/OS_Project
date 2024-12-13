@@ -713,13 +713,18 @@ void env_set_priority(int envID, int priority)
 		return;
 	}
 
-	proc->priority=priority;
 
 	if(proc->env_status==ENV_READY){ //if the process status is ready
 		acquire_spinlock(&(ProcessQueues.qlock));
 		sched_remove_ready(proc);
+
+		proc->priority=priority;
+
 		sched_insert_ready(proc);
 		release_spinlock(&(ProcessQueues.qlock));
+	}
+	else{
+		proc->priority=priority;
 	}
 
 	//Your code is here
