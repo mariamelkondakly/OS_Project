@@ -14,6 +14,7 @@
 
 void init_sleeplock(struct sleeplock *lk, char *name)
 {
+	cprintf("init sleep lock of%s \n" ,name );
 	init_channel(&(lk->chan), "sleep lock channel");
 	init_spinlock(&(lk->lk), "lock of sleep lock");
 	strcpy(lk->name, name);

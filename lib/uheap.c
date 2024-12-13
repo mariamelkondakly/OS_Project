@@ -226,7 +226,7 @@ void* smalloc(char* sharedVarName, uint32 size, uint8 isWritable)
            return NULL;
        }
        int x=sys_createSharedObject(sharedVarName,size,isWritable,(void*)first_va_found);
-       if(x==E_NO_SHARE||x==E_SHARED_MEM_EXISTS||x==E_NO_MEM){
+       if(x==E_NO_SHARE||x==E_SHARED_MEM_EXISTS){//||x==E_NO_MEM
     	   cprintf("no mem \n");
        	return NULL;
        }

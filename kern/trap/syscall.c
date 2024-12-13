@@ -363,33 +363,36 @@ void sys_init_queue(struct Env_Queue* queue)
 	init_queue(queue);
 	return;
 }
-void sys_enqueue(struct Env_Queue* queue){
+void sys_enqueue(struct __semdata* sem){
 
-	struct Env *current_process = get_cpu_proc();
-	enqueue(queue,current_process);
-	cprintf("han block \n");
-	current_process->env_status=ENV_BLOCKED;
-	cprintf("process is enqueued in kernel and blocked \n");
 	acquire_spinlock(&ProcessQueues.qlock);
+	sem->lock=0;
+	struct Env *current_process = get_cpu_proc();
+	enqueue(&sem->queue,current_process);
+	current_process->env_status=ENV_BLOCKED;
 	sched();
 	release_spinlock(&ProcessQueues.qlock);
-	cprintf(" 5alas sched ? \n");
-
 	return;
 }
 void sys_sched(void){
+	acquire_spinlock(&ProcessQueues.qlock);
 	sched();
+	release_spinlock(&ProcessQueues.qlock);
 	return;
 }
 struct Env* sys_dequeue(struct Env_Queue* queue)
 {
+	acquire_spinlock(&ProcessQueues.qlock);
 	struct Env* env = dequeue(queue);
+	env->env_status=ENV_READY;
+	sched_insert_ready(env);
+	release_spinlock(&ProcessQueues.qlock);
 	return env;
 }
 void sys_sched_insert_ready(struct Env* env)
 {
 	cprintf("insert ready in kernel");
-	release_spinlock(&ProcessQueues.qlock);
+	acquire_spinlock(&ProcessQueues.qlock);
 	sched_insert_ready(env);
 	release_spinlock(&ProcessQueues.qlock);
 	return;
@@ -573,7 +576,7 @@ uint32 syscall(uint32 syscallno, uint32 a1, uint32 a2, uint32 a3, uint32 a4, uin
 		return 0;
 		break;
 	case SYS_enqueue:
-		sys_enqueue((struct Env_Queue*) a1);
+		sys_enqueue((struct __semdata*) a1);
 		return 0;
 		break;
 	case SYS_dequeue:

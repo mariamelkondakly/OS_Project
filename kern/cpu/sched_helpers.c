@@ -23,7 +23,7 @@ extern void cleanup_buffers(struct Env* e);
 //================================
 void init_queue(struct Env_Queue* queue)
 {
-	cprintf("da5al init queue in kernel \n");
+//	cprintf("da5al init queue in kernel \n");
 	if(queue != NULL)
 	{
 		LIST_INIT(queue);

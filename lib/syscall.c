@@ -323,8 +323,9 @@ void sys_init_queue(struct Env_Queue* queue)
 	cprintf("entered 1 ");
 	syscall(SYS_init_queue,(uint32)queue,0,0,0,0);
 }
-void sys_enqueue(struct Env_Queue* queue){
+void sys_enqueue(struct __semdata* queue){
 	syscall(SYS_enqueue,(uint32)queue,0,0,0,0);
+
 }
 void sys_sched(void){
 	syscall(SYS_sched,0,0,0,0,0);
