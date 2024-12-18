@@ -138,7 +138,7 @@ struct Env {
 	uint32 start ;// begin of the dynamic allocator area
 	uint32 Break ;//end of the allocated space (current mapped area)
 	uint32 hard_limit ;// max limit that can't be exceeded
-//	uint32 clocks;
+	uint32 clocks;
 	//=======================================================================
 	//for page file management
 	uint32* disk_env_pgdir;

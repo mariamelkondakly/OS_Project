@@ -458,11 +458,9 @@ int sched_init_PRIRR_Command(int number_of_arguments, char **arguments){
 
 	uint8 n1, n2;
 	uint32 n3;
-	n1 = strtol(arguments[0], NULL, 10);
-	n2 = strtol(arguments[1], NULL, 10);
-	n3 = strtol(arguments[2], NULL, 10);
-
-
+	n1 = strtol(arguments[1], NULL, 10);
+	n2 = strtol(arguments[2], NULL, 10);
+	n3 = strtol(arguments[3], NULL, 10);
 	sched_init_PRIRR(n1, n2, n3);
 
 	return 0;
