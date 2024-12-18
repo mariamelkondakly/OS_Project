@@ -10,12 +10,14 @@
 #include <kern/cmd/command_prompt.h>
 #include <kern/cpu/cpu.h>
 #include <kern/cpu/picirq.h>
+#include <kern/cpu/sched_helpers.h>
 
 
 uint32 isSchedMethodRR(){return (scheduler_method == SCH_RR);}
 uint32 isSchedMethodMLFQ(){return (scheduler_method == SCH_MLFQ); }
 uint32 isSchedMethodBSD(){return(scheduler_method == SCH_BSD); }
 uint32 isSchedMethodPRIRR(){return(scheduler_method == SCH_PRIRR); }
+//uint32 prevTicks=0;
 
 //===================================================================================//
 //============================ SCHEDULER FUNCTIONS ==================================//
@@ -249,14 +251,40 @@ void sched_init_PRIRR(uint8 numOfPriorities, uint8 quantum, uint32 starvThresh)
 	//TODO: [PROJECT'24.MS3 - #07] [3] PRIORITY RR Scheduler - sched_init_PRIRR
 	//Your code is here
 	//Comment the following line
-	panic("Not implemented yet");
+	//panic("Not implemented yet");
+
+//	sched_delete_ready_queues();
+	kfree(quantums);
+	kfree(ProcessQueues.env_ready_queues);
+
+//	cprintf("before : quantums = kmalloc(numOfPriorities * sizeof(uint8)) ; \n");
+	quantums = kmalloc(numOfPriorities * sizeof(uint8)) ;
+//	cprintf("after : num of priorities = %d \n", numOfPriorities);
+
+	num_of_ready_queues = numOfPriorities;
+//	cprintf("after : num of priorities are set = %d \n", numOfPriorities);
+//	cprintf("Before : setting the first quantum =%d \n", quantum);
+//	kclock_set_quantum(quantum);
+	quantums[0]=quantum;
+	sched_set_starv_thresh(starvThresh);
+//	cprintf("after : setting the starv threshold = %d \n",starvThresh);
 
 
 
+	// msh mt2kda mnha lsa bs de RR ely mwgoda given
+//	cprintf("before : ProcessQueues.env_ready_queues = kmalloc(numOfPriorities * sizeof(uint8)); \n");
+	acquire_spinlock(&(ProcessQueues.qlock));
+	ProcessQueues.env_ready_queues = kmalloc(numOfPriorities * sizeof(struct Env_Queue));
+	release_spinlock(&(ProcessQueues.qlock));
+//	cprintf("after : ProcessQueues.env_ready_queues = kmalloc(numOfPriorities * sizeof(uint8)); \n");
 
+	// other initializations
+	init_queue(&ProcessQueues.env_exit_queue);
+	init_queue(&ProcessQueues.env_new_queue);
 
-
-
+	for(int i=0;i<numOfPriorities;i++){
+		init_queue(&(ProcessQueues.env_ready_queues[i]));
+	}
 
 
 	//=========================================
@@ -350,7 +378,39 @@ struct Env* fos_scheduler_PRIRR()
 	//TODO: [PROJECT'24.MS3 - #08] [3] PRIORITY RR Scheduler - fos_scheduler_PRIRR
 	//Your code is here
 	//Comment the following line
-	panic("Not implemented yet");
+//	panic("Not implemented yet");
+
+	struct Env *nxt_env = NULL;
+	struct Env *current_env = get_cpu_proc();
+
+	//  1 - If there’s a current process on the CPU, place it in the corresponding ready queue (do any required initializations)
+	if (current_env != NULL){
+//		cprintf("an env already exists on the cpu with id: %d \n", current_env->env_id);
+		sched_insert_ready(current_env);
+
+	}
+
+	//  2 -  Select the next environment to be run on the CPU and return it
+//	acquire_spinlock(&(ProcessQueues.qlock));
+//	cprintf("entered  fos_scheduler_PRIRR second c section \n");
+
+	for(int i=0;i<num_of_ready_queues;i++){
+		if(ProcessQueues.env_ready_queues[i].size>0){   // if there is at least one process in the queue, then take it and break
+			nxt_env = dequeue(&(ProcessQueues.env_ready_queues[i]));
+			break;
+		}
+	}
+//	cprintf("found the next env with id: %d \n", nxt_env->env_id);
+
+//	release_spinlock(&(ProcessQueues.qlock));
+//	cprintf("exited fos_scheduler_PRIRR second c section \n");
+
+
+	//  3 - REMEMBER to set the CPU quantum
+	kclock_set_quantum(quantums[0]);
+
+	return nxt_env;
+
 }
 
 //========================================
@@ -364,8 +424,30 @@ void clock_interrupt_handler(struct Trapframe* tf)
 		//TODO: [PROJECT'24.MS3 - #09] [3] PRIORITY RR Scheduler - clock_interrupt_handler
 		//Your code is here
 		//Comment the following line
-		panic("Not implemented yet");
+		//panic("Not implemented yet");
+		//set the ticks to 0
+//		cprintf("2. entered clock_interrupt_handler \n");
+		struct Env* currentEnv;
+		acquire_spinlock(&(ProcessQueues.qlock));
+//		cprintf("entered clock_interrupt_handler  first c section \n");
+
+		for(int i=1; i<num_of_ready_queues;i++){
+			int noOfProcessesInAQueue=queue_size(&(ProcessQueues.env_ready_queues[i]));
+			for(int j=0; j<noOfProcessesInAQueue;j++){
+				currentEnv=dequeue(&(ProcessQueues.env_ready_queues[i]));
+				currentEnv->clocks++;
+				if(currentEnv->clocks==threshold){
+					currentEnv->priority--;
+				}
+				sched_insert_ready(currentEnv);
+			}
+		}
+		release_spinlock(&(ProcessQueues.qlock));
+//		cprintf("exited clock_interrupt_handler  first c section \n");
+
+
 	}
+
 
 
 

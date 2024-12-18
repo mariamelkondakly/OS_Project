@@ -52,7 +52,7 @@ enum
 	SYS_sbrk,
 	SYS_free_user_mem,
 	SYS_allocate_user_mem,
-
+	SYS_env_set_priority,
 	//semaphores!
 	SYS_init_queue,
 	SYS_enqueue,

@@ -8,6 +8,8 @@
 
 #include <inc/environment_definitions.h>
 
+uint32 threshold;
+
 /*2023*/
 /********* for BSD Priority Scheduler *************/
 int env_get_nice(struct Env* e) ;

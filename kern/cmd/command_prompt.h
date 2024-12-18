@@ -31,6 +31,8 @@ int execute_command(char *command_string);
 void command_prompt_readline(const char *, char *);
 void get_into_prompt() __attribute__((noreturn));
 
+int sched_init_PRIRR_Command(int number_of_arguments, char** arguments);
+
 /*2024*/
 int process_command(int number_of_arguments, char** arguments);
 

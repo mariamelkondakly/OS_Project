@@ -1059,6 +1059,7 @@ void initialize_environment(struct Env* e, uint32* ptr_user_page_directory, unsi
 	e->nModifiedPages=0;
 	e->nNotModifiedPages=0;
 	e->nClocks = 0;
+	e->clocks=0;
 
 	//2020
 	e->nPageIn = 0;
