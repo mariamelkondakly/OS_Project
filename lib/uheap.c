@@ -193,8 +193,10 @@ void* smalloc(char* sharedVarName, uint32 size, uint8 isWritable)
 
     // Check if the size exceeds the available heap space
     if (size > (USER_HEAP_MAX - (USER_HEAP_START+ DYN_ALLOC_MAX_SIZE+PAGE_SIZE))) {
+    	cprintf("exceeds ava space \n");
         return NULL;
     }
+
 
     //uint32 first_va_found = myEnv->hard_limit + PAGE_SIZE; // Start searching after the hard limit
 	uint32 first_va_found = USER_HEAP_START + DYN_ALLOC_MAX_SIZE + PAGE_SIZE; //UHS + 32MB + 4KB
@@ -223,9 +225,9 @@ void* smalloc(char* sharedVarName, uint32 size, uint8 isWritable)
            cprintf("Not enough contiguous space in kernel heap\n");
            return NULL;
        }
-
        int x=sys_createSharedObject(sharedVarName,size,isWritable,(void*)first_va_found);
-       if(x==E_NO_SHARE||x==E_SHARED_MEM_EXISTS||x==E_NO_MEM){
+       if(x==E_NO_SHARE||x==E_SHARED_MEM_EXISTS){//||x==E_NO_MEM
+    	   cprintf("no mem \n");
        	return NULL;
        }
        markAddressAsAllocated(first_va_found, numOfPagesNeeded);

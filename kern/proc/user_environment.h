@@ -9,6 +9,8 @@
 #include <kern/cpu/sched_helpers.h>
 #include <kern/conc/spinlock.h>
 
+#include<kern/conc/sleeplock.h>
+struct sleeplock Myfaultlock;
 
 //========================================================
 extern struct UserProgramInfo* ptr_UserPrograms;

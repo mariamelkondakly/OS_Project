@@ -361,7 +361,53 @@ void sys_env_set_priority(int32 envID, int priority){
 /* SEMAPHORES SYSTEM CALLS */
 /*******************************/
 //[PROJECT'24.MS3] ADD SUITABLE CODE HERE
+void sys_init_queue(struct Env_Queue* queue)
+{
+	if(queue==NULL){//check lw fel user?
+		cprintf("returned in sys call \n");
+		return;
+	}
+	init_queue(queue);
+	return;
+}
+void sys_enqueue(struct __semdata* sem){
 
+	acquire_spinlock(&ProcessQueues.qlock);
+	sem->lock=0;
+	struct Env *current_process = get_cpu_proc();
+	enqueue(&sem->queue,current_process);
+	current_process->env_status=ENV_BLOCKED;
+	sched();
+	release_spinlock(&ProcessQueues.qlock);
+	return;
+}
+void sys_sched(void){
+	acquire_spinlock(&ProcessQueues.qlock);
+	sched();
+	release_spinlock(&ProcessQueues.qlock);
+	return;
+}
+struct Env* sys_dequeue(struct Env_Queue* queue)
+{
+	acquire_spinlock(&ProcessQueues.qlock);
+	struct Env* env = dequeue(queue);
+	env->env_status=ENV_READY;
+	sched_insert_ready(env);
+	release_spinlock(&ProcessQueues.qlock);
+	return env;
+}
+void sys_sched_insert_ready(struct Env* env)
+{
+	cprintf("insert ready in kernel");
+	acquire_spinlock(&ProcessQueues.qlock);
+	sched_insert_ready(env);
+	release_spinlock(&ProcessQueues.qlock);
+	return;
+}
+int sys_queue_size(struct Env_Queue* queue)
+{
+	return queue_size(queue);
+}
 
 /*******************************/
 /* SHARED MEMORY SYSTEM CALLS */
@@ -533,6 +579,26 @@ uint32 syscall(uint32 syscallno, uint32 a1, uint32 a2, uint32 a3, uint32 a4, uin
 	case SYS_env_set_priority:
 		sys_env_set_priority((uint32) a1,(int) a2 );
 		return 0;
+		break;
+
+		//semaphores!!
+	case SYS_init_queue:
+		sys_init_queue((struct Env_Queue*) a1);
+		return 0;
+		break;
+	case SYS_enqueue:
+		sys_enqueue((struct __semdata*) a1);
+		return 0;
+		break;
+	case SYS_dequeue:
+		return (uint32)sys_dequeue((struct Env_Queue*) a1);
+		break;
+	case SYS_sched_insert_ready:
+		sys_sched_insert_ready((struct Env*)a2);
+		return 0;
+		break;
+	case SYS_queue_size:
+		return sys_queue_size((struct Env_Queue*) a2);
 		break;
 
 	//======================================================================

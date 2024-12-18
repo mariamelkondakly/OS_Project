@@ -23,6 +23,7 @@ extern void cleanup_buffers(struct Env* e);
 //================================
 void init_queue(struct Env_Queue* queue)
 {
+//	cprintf("da5al init queue in kernel \n");
 	if(queue != NULL)
 	{
 		LIST_INIT(queue);
@@ -49,6 +50,7 @@ int queue_size(struct Env_Queue* queue)
 //====================================
 void enqueue(struct Env_Queue* queue, struct Env* env)
 {
+//	cprintf("enqueued in kernel \n");
 	assert(queue != NULL)	;
 	if(env != NULL)
 	{
@@ -61,6 +63,7 @@ void enqueue(struct Env_Queue* queue, struct Env* env)
 //======================================
 struct Env* dequeue(struct Env_Queue* queue)
 {
+//	cprintf("dequeued in kernel \n");
 	if (queue == NULL) return NULL;
 	struct Env* envItem = LIST_LAST(queue);
 	if (envItem != NULL)
@@ -156,6 +159,7 @@ void sched_insert_ready(struct Env* env)
 		//cprintf("\nInserting %d into ready queue 0\n", env->env_id);
 		env->env_status = ENV_READY ;
 		enqueue(&(ProcessQueues.env_ready_queues[env->priority]), env);
+
 	}
 }
 

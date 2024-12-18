@@ -29,6 +29,7 @@ _main(void)
 		uint32* vars[NUM_OF_OBJS];
 		for (int s = 0; s < NUM_OF_OBJS; ++s)
 		{
+			//cprintf("first loop %d \n",s);
 			char index[10];
 			ltostr(s, index);
 			strcconcat(initname, index, name);
@@ -37,6 +38,7 @@ _main(void)
 		}
 		for (int s = 0; s < NUM_OF_OBJS; ++s)
 		{
+			//cprintf("second loop %d \n",s);
 			assert(*vars[s] == s);
 		}
 	}

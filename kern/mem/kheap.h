@@ -55,4 +55,6 @@ struct allocated_together{
 #define ARR_SIZE ((KERNEL_HEAP_MAX - KERNEL_HEAP_START) / PAGE_SIZE)
 struct allocated_together pages_together[ARR_SIZE];
 
+
+
 #endif // FOS_KERN_KHEAP_H_

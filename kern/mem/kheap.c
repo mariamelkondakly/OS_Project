@@ -4,12 +4,17 @@
 #include <inc/dynamic_allocator.h>
 #include "memory_manager.h"
 
+
+#include<kern/conc/sleeplock.h>
+struct sleeplock kernel_lock;
+
 //Initialize the dynamic allocator of kernel heap with the given start address, size & limit
 //All pages in the given range should be allocated
 //Remember: call the initialize_dynamic_allocator(..) to complete the initialization
 //Return:
 //	On success: 0
 //	Otherwise (if no memory OR initial size exceed the given limit): PANIC
+//struct spinlock kernel_lock;
 int initialize_kheap_dynamic_allocator(uint32 daStart, uint32 initSizeToAllocate, uint32 daLimit) {
 	//TODO: [PROJECT'24.MS2 - #01] [1] KERNEL HEAP - initialize_kheap_dynamic_allocator
 	// Write your code here, remove the panic and write your code
@@ -17,6 +22,7 @@ int initialize_kheap_dynamic_allocator(uint32 daStart, uint32 initSizeToAllocate
 
     start = daStart;
     hard_limit = daLimit;
+    init_sleeplock(&kernel_lock, "Kernel Lock");
 
     uint32 edited_initSizeToAllocate = ROUNDUP(initSizeToAllocate, PAGE_SIZE);
     Break = start + edited_initSizeToAllocate;
@@ -68,6 +74,7 @@ int initialize_kheap_dynamic_allocator(uint32 daStart, uint32 initSizeToAllocate
 
 
     initialize_dynamic_allocator(start, Break - start);
+
  return 0;
 
 }
@@ -180,19 +187,27 @@ void* kmalloc(unsigned int size)
 	// use "isKHeapPlacementStrategyFIRSTFIT() ..." functions to check the current strategy
 
      //cprintf("The Size equals %d \n",size);
+
+	acquire_sleeplock(&kernel_lock);
 	if(!isKHeapPlacementStrategyFIRSTFIT()){
+		release_sleeplock(&kernel_lock);
 		return NULL;
 	}
 	 if (size == 0 || size > (KERNEL_HEAP_MAX - KERNEL_HEAP_START)) {
 			        cprintf("Invalid size for kmalloc: %u\n", size);
+			        release_sleeplock(&kernel_lock);
 			        return NULL;
 			    }
+
 	          //Block Allocator:
 			  if(size <= DYN_ALLOC_MAX_BLOCK_SIZE){
 			  		  //cprintf("ms1 alloc \n");
 			  		  void * ptr =alloc_block_FF(size);
-			  		  if(ptr==NULL)
+			  		  if(ptr==NULL){
+			  			release_sleeplock(&kernel_lock);
 		  			  return NULL;
+			  		  }
+			  		release_sleeplock(&kernel_lock);
 			  		  return ptr;
 			  	  }
 			  //Page Allocator:
@@ -221,6 +236,7 @@ void* kmalloc(unsigned int size)
 
 			    if (pagesCounter < no_Of_required_pages) {
 			        cprintf("Not enough contiguous space in kernel heap\n");
+			        release_sleeplock(&kernel_lock);
 			        return NULL;
 			    }
 
@@ -237,6 +253,7 @@ void* kmalloc(unsigned int size)
 			                unmap_frame(ptr_page_directory, k);
 			                free_frame(get_frame_info(ptr_page_directory, k, NULL));
 			            }
+			            release_sleeplock(&kernel_lock);
 			            return NULL;
 			        }
 
@@ -253,6 +270,7 @@ void* kmalloc(unsigned int size)
 
 
 			            free_frame(frame_info);
+			            release_sleeplock(&kernel_lock);
 			            return NULL;
 			        }
 			    }
@@ -270,7 +288,7 @@ void* kmalloc(unsigned int size)
 
 			   //cprintf("list done \n");
 			   //cprintf("add returned from kmalloc  %d \n" ,(void*)first_va_found);
-
+			   	release_sleeplock(&kernel_lock);
 			    return (void*)first_va_found;
 
 }
@@ -291,6 +309,7 @@ void kfree(void* virtual_address)
      //cprintf("KERNEL_HEAP_MAX %d \n",KERNEL_HEAP_MAX);
 
      //Block Allocator:
+	acquire_sleeplock(&kernel_lock);
 	if((uint32)virtual_address>=KERNEL_HEAP_START && (uint32)virtual_address<=Break){
 				free_block(virtual_address);
 			}
@@ -324,8 +343,10 @@ void kfree(void* virtual_address)
 				}
 			}else{
 				panic("Invalid Address \n");
+				release_sleeplock(&kernel_lock);
 				return;
 			}
+	release_sleeplock(&kernel_lock);
 	//cprintf("kfree done \n");
 }
 
@@ -342,8 +363,9 @@ unsigned int kheap_physical_address(unsigned int virtual_address)
     //EFFICIENT IMPLEMENTATION ~O(1) IS REQUIRED ==================
 
     //cprintf("start of physical_address \n");
-
+	//acquire_spinlock(&kernel_lock);
        if (virtual_address < KERNEL_HEAP_START || virtual_address >= KERNEL_HEAP_MAX){
+    	   //release_spinlock(&kernel_lock);
           return 0;
        }
 
@@ -352,6 +374,7 @@ unsigned int kheap_physical_address(unsigned int virtual_address)
 
        if (page_table == NULL)
        {
+    	   //release_spinlock(&kernel_lock);
         return 0;
        }
 
@@ -360,12 +383,13 @@ unsigned int kheap_physical_address(unsigned int virtual_address)
      // Check if the page is present
      if (!(page_entry & PERM_PRESENT))
     {
+    	 //release_spinlock(&kernel_lock);
      return 0; // Page is not mapped
     }
 
     uint32 frame = page_entry & 0xFFFFF000;
     uint32 offset = virtual_address & 0x00000FFF;
-
+    //release_spinlock(&kernel_lock);
     //cprintf("End of physical_address \n");
     return frame|offset;
 
@@ -382,12 +406,13 @@ unsigned int kheap_virtual_address(unsigned int physical_address)
 
 //EFFICIENT IMPLEMENTATION ~O(1) IS REQUIRED ==================
 
-
+	//acquire_spinlock(&kernel_lock);
 
     struct FrameInfo* ptr_frame_info = NULL;
     ptr_frame_info = to_frame_info(physical_address);
 
     if (ptr_frame_info->references == 0) {
+    	  //release_spinlock(&kernel_lock);
        return 0;
     }
 
@@ -398,12 +423,14 @@ unsigned int kheap_virtual_address(unsigned int physical_address)
     uint32 VA = dirIndex|pageTableIndex|offset;
 
    if (VA < KERNEL_HEAP_START || VA >= KERNEL_HEAP_MAX){
+	   //release_spinlock(&kernel_lock);
      return 0;
    }
    if( VA > hard_limit && VA < (hard_limit + PAGE_SIZE)){
+	   //release_spinlock(&kernel_lock);
      return 0;
    }
-
+   //release_spinlock(&kernel_lock);
     return VA;
 
 }

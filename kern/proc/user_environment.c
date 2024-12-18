@@ -862,6 +862,7 @@ uint32 __cur_k_stk = KERNEL_HEAP_START;
 //===========================================================
 // 5) ALLOCATE SPACE FOR USER KERNEL STACK (One Per Process):
 //===========================================================
+
 void* create_user_kern_stack(uint32* ptr_user_page_directory)
 {
 #if USE_KHEAP
@@ -874,6 +875,7 @@ void* create_user_kern_stack(uint32* ptr_user_page_directory)
 		// Write your code here, remove the panic and write your code
 		//panic("create_user_kern_stack() is not implemented yet...!!");
 
+	init_sleeplock(&Myfaultlock,"fault lock");
 				uint32 *stack_top;
 				int noOfPages = KERNEL_STACK_SIZE/PAGE_SIZE;
 			   void *ret = kmalloc(KERNEL_STACK_SIZE);
@@ -921,6 +923,9 @@ void delete_user_kern_stack(struct Env* e)
 //===============================================
 // 7) INITIALIZE DYNAMIC ALLOCATOR OF UHEAP:
 //===============================================
+
+
+
 void initialize_uheap_dynamic_allocator(struct Env* e, uint32 daStart, uint32 daLimit)
 {
 	//TODO: [PROJECT'24.MS2 - #10] [3] USER HEAP - initialize_uheap_dynamic_allocator
@@ -932,7 +937,6 @@ void initialize_uheap_dynamic_allocator(struct Env* e, uint32 daStart, uint32 da
 	e->hard_limit=daLimit;
 	e->Break=daStart;
 	uint32 num_pages = ROUNDUP(daLimit-daStart,PAGE_SIZE)/PAGE_SIZE;
-
 	initialize_dynamic_allocator(e->start,0);
 }
 

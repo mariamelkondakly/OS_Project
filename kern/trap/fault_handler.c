@@ -157,13 +157,16 @@ void fault_handler(struct Trapframe *tf)
 
 				int MarkedBit=(page_perm &(1<<10));
 				if(fault_va >= USER_HEAP_START && fault_va < USER_HEAP_MAX && MarkedBit==0){
+					cprintf("exit 1 \n");
 					env_exit();
 				}
 				if(fault_va >USER_LIMIT)
 				{
+					cprintf("exit 2 \n");
 					env_exit();
 				}
 				if(!(page_perm & PERM_WRITEABLE)&&(page_perm & PERM_PRESENT)){
+					cprintf("exit 3 \n");
 					 env_exit();
 			    }
 			/*============================================================================================*/
@@ -235,7 +238,7 @@ void page_fault_handler(struct Env * faulted_env, uint32 fault_va)
 		int iWS =faulted_env->page_last_WS_index;
 		uint32 wsSize = env_page_ws_get_size(faulted_env);
 #endif
-
+		acquire_sleeplock(&Myfaultlock);
 		if(wsSize < (faulted_env->page_WS_max_size))
 		{
 		  //cprintf("PLACEMENT=========================WS Size = %d\n", wsSize );
@@ -243,19 +246,21 @@ void page_fault_handler(struct Env * faulted_env, uint32 fault_va)
 		  // Write your code here, remove the panic and write your code
 		  //panic("page_fault_handler().PLACEMENT is not implemented yet...!!");
 
-		  //cprintf("da5al placement \n");
+		  cprintf("entered placement \n");
 
 		  // Allocating and Mapping
 	      struct FrameInfo *frame=NULL;
 		  int alloc_ret = allocate_frame(&frame);
 		  if (alloc_ret == E_NO_MEM){
 		     cprintf("NO MEMORY ....");
+		     release_sleeplock(&Myfaultlock);
 		     return;
 		  }
 		  int map_ret = map_frame(faulted_env->env_page_directory,frame,fault_va,PERM_PRESENT|PERM_WRITEABLE| PERM_USER);
 		  if (map_ret == E_NO_MEM){
 			 free_frame(frame);
 		     cprintf("NO MEMORY ....");
+		     release_sleeplock(&Myfaultlock);
 			 return;
 		}
 		  //checking if it exists in disk
@@ -275,12 +280,14 @@ void page_fault_handler(struct Env * faulted_env, uint32 fault_va)
 				else{
 					faulted_env->page_last_WS_element=LIST_FIRST(&(faulted_env->page_WS_list));
 				}
+				 release_sleeplock(&Myfaultlock);
 				return;
 			}
 			else{//not heap or stack
 				unmap_frame(faulted_env->env_page_directory,fault_va);
 				//free_frame(frame);
-				//cprintf("baraaa 3shan mesh stack aw heap \n");
+				cprintf("baraaa 3shan mesh stack aw heap env %d \n", get_cpu_proc()->env_id);
+				 release_sleeplock(&Myfaultlock);
 				env_exit();
 			}
 
@@ -289,13 +296,212 @@ void page_fault_handler(struct Env * faulted_env, uint32 fault_va)
 
 	else
 	{
-		//cprintf("REPLACEMENT=========================WS Size = %d\n", wsSize );
-		//refer to the project presentation and documentation for details
-		//TODO: [PROJECT'24.MS3] [2] FAULT HANDLER II - Replacement
-		// Write your code here, remove the panic and write your code
-		panic("page_fault_handler() Replacement is not implemented yet...!!");
+
+							//cprintf("REPLACEMENT=========================WS Size = %d\n", wsSize );
+							//refer to the project presentation and documentation for details
+							//TODO: [PROJECT'24.MS3] [2] FAULT HANDLER II - Replacement
+							// Write your code here, remove the panic and write your code
+							//panic("page_fault_handler() Replacement is not implemented yet...!!");
+
+			                cprintf("entered Replacement\n");
+
+							//struct WorkingSetElement *wsElement = faulted_env->page_last_WS_element;
+							struct WorkingSetElement *newWsElement;
+							struct WorkingSetElement *beforeNewWsElement ;
+
+							struct FrameInfo *frame=NULL;
+									  int alloc_ret = allocate_frame(&frame);
+									  if (alloc_ret == E_NO_MEM){
+									     cprintf("NO MEMORY ....");
+									     release_sleeplock(&Myfaultlock);
+									     return;
+									  }
+									  int map_ret = map_frame(faulted_env->env_page_directory,frame,fault_va,PERM_PRESENT|PERM_WRITEABLE| PERM_USER|PERM_USED|0x400);
+									  if (map_ret == E_NO_MEM){
+										 free_frame(frame);
+									     cprintf("NO MEMORY ....");
+									     release_sleeplock(&Myfaultlock);
+										 return;
+									}
+
+
+					while(1==1){
+						//cprintf("entered Loop\n");
+						uint32 page_perm = pt_get_page_permissions(faulted_env->env_page_directory,faulted_env->page_last_WS_element->virtual_address);
+					if(page_perm & PERM_USED) {//clear used & clear sweeps counter , searching from the pointer
+						//cprintf("entered Used=1 \n");
+						pt_set_page_permissions(faulted_env->env_page_directory,faulted_env->page_last_WS_element->virtual_address,0,PERM_USED);
+						 faulted_env->page_last_WS_element->sweeps_counter=0;
+						}
+					else{//if used==0
+						//cprintf("entered Used=0 \n");
+						faulted_env->page_last_WS_element->sweeps_counter++;
+
+
+						if(page_WS_max_sweeps>0){//if n is +ve
+							//cprintf("page_WS_max_sweeps>0 , if n is +ve \n");
+
+							if(faulted_env->page_last_WS_element->sweeps_counter==page_WS_max_sweeps){//replace normal
+
+								if (!(page_perm & PERM_MODIFIED)){
+							//cprintf("Replace a Non modified Normal page \n");
+
+							//checking if it exists in disk
+							int ReadRet = pf_read_env_page(faulted_env,(void*)fault_va);
+
+							beforeNewWsElement=LIST_PREV(faulted_env->page_last_WS_element);
+
+							env_page_ws_invalidate(faulted_env,faulted_env->page_last_WS_element->virtual_address);
+							faulted_env->page_last_WS_element=NULL; //bagarab
+
+							newWsElement=env_page_ws_list_create_element(faulted_env,fault_va);
+							newWsElement->sweeps_counter=0;
+
+
+							if(beforeNewWsElement!=NULL){
+							LIST_INSERT_AFTER(&faulted_env->page_WS_list,beforeNewWsElement,newWsElement);
+							}else{
+							LIST_INSERT_HEAD(&(faulted_env->page_WS_list),newWsElement);
+							}
+							//newWsElement = wsElement;//mesh mot2akdeen 7atenah mkan el victim
+							if(newWsElement->prev_next_info.le_next!=NULL){
+							faulted_env->page_last_WS_element =LIST_NEXT(newWsElement);
+							}
+							else{
+							faulted_env->page_last_WS_element=LIST_FIRST(&(faulted_env->page_WS_list));
+							}
+							//env_page_ws_print(faulted_env);
+							 release_sleeplock(&Myfaultlock);
+							return;
+						 }
+						 else if (page_perm & PERM_MODIFIED){
+						 	//cprintf("Replace a modified page \n");
+
+						 	//checking if it exists in disk
+						 	int ReadRet = pf_read_env_page(faulted_env,(void*)fault_va);
+
+						 	uint32 *page_table=NULL;
+						 	int UpdateRet= pf_update_env_page(faulted_env,faulted_env->page_last_WS_element->virtual_address,get_frame_info(faulted_env->env_page_directory,faulted_env->page_last_WS_element->virtual_address,&page_table));
+
+	                        //cprintf("UPDATED THE DISK \n");
+						 	// the page is updated successfully on the page file.
+						 	beforeNewWsElement=LIST_PREV(faulted_env->page_last_WS_element);
+						 	env_page_ws_invalidate(faulted_env,faulted_env->page_last_WS_element->virtual_address);
+						 	faulted_env->page_last_WS_element=NULL; //bagarab
+
+						 	newWsElement=env_page_ws_list_create_element(faulted_env,fault_va);
+						 	newWsElement->sweeps_counter=0;
+
+						 	if(beforeNewWsElement!=NULL){
+						 	  LIST_INSERT_AFTER(&faulted_env->page_WS_list,beforeNewWsElement,newWsElement);
+						 	}else{
+						 		LIST_INSERT_HEAD(&(faulted_env->page_WS_list),newWsElement);
+						 	}
+						 	//newWsElement = wsElement;//mesh mot2akdeen 7atenah mkan el victim
+						 	if(newWsElement->prev_next_info.le_next!=NULL){
+						 		faulted_env->page_last_WS_element =LIST_NEXT(newWsElement);
+						 	}
+						 	else{
+						 		faulted_env->page_last_WS_element=LIST_FIRST(&(faulted_env->page_WS_list));
+						 	}
+						 	//env_page_ws_print(faulted_env);
+						 	 release_sleeplock(&Myfaultlock);
+						 	return;
+
+						}
+			 }
+		}
+					else if(page_WS_max_sweeps<0){//-ve n
+					//cprintf("page_WS_max_sweeps<0 , if n is -ve \n");
+					int max_sweeps = page_WS_max_sweeps*-1;
+					//uint32 page_perm = pt_get_page_permissions(faulted_env->env_page_directory,faulted_env->page_last_WS_element->virtual_address);
+					//int modified=(page_perm &(1<<5));
+					if(!(page_perm & PERM_MODIFIED)){
+					if(faulted_env->page_last_WS_element->sweeps_counter==max_sweeps){//replace normal
+						//cprintf("Replace a Non modified page \n");
+
+						//checking if it exists in disk
+						int ReadRet = pf_read_env_page(faulted_env,(void*)fault_va);
+
+						beforeNewWsElement=LIST_PREV(faulted_env->page_last_WS_element);
+
+						env_page_ws_invalidate(faulted_env,faulted_env->page_last_WS_element->virtual_address);
+						faulted_env->page_last_WS_element=NULL; //bagarab
+
+						newWsElement=env_page_ws_list_create_element(faulted_env,fault_va);
+						newWsElement->sweeps_counter=0;
+
+						if(beforeNewWsElement!=NULL){
+							LIST_INSERT_AFTER(&faulted_env->page_WS_list,beforeNewWsElement,newWsElement);
+						}else{
+							LIST_INSERT_HEAD(&(faulted_env->page_WS_list),newWsElement);
+							}
+							//newWsElement = wsElement;//mesh mot2akdeen 7atenah mkan el victim
+							if(newWsElement->prev_next_info.le_next!=NULL){
+								faulted_env->page_last_WS_element =LIST_NEXT(newWsElement);
+							}
+							else{
+								faulted_env->page_last_WS_element=LIST_FIRST(&(faulted_env->page_WS_list));
+								}
+							//env_page_ws_print(faulted_env);
+							 release_sleeplock(&Myfaultlock);
+								return;
+					  }
+				}
+					 else if (page_perm & PERM_MODIFIED){
+					 if(faulted_env->page_last_WS_element->sweeps_counter==max_sweeps+1){//replace and modified
+						//cprintf("Replace a modified page \n");
+
+						//checking if it exists in disk
+						int ReadRet = pf_read_env_page(faulted_env,(void*)fault_va);
+
+						uint32 *page_table=NULL;
+						int UpdateRet= pf_update_env_page(faulted_env,faulted_env->page_last_WS_element->virtual_address,get_frame_info(faulted_env->env_page_directory,faulted_env->page_last_WS_element->virtual_address,&page_table));
+
+	                     //cprintf("UPDATED THE DISK \n");
+						// the page is updated successfully on the page file.
+						beforeNewWsElement=LIST_PREV(faulted_env->page_last_WS_element);
+						env_page_ws_invalidate(faulted_env,faulted_env->page_last_WS_element->virtual_address);
+						faulted_env->page_last_WS_element=NULL; //bagarab
+
+						newWsElement=env_page_ws_list_create_element(faulted_env,fault_va);
+						newWsElement->sweeps_counter=0;
+
+						if(beforeNewWsElement!=NULL){
+							LIST_INSERT_AFTER(&faulted_env->page_WS_list,beforeNewWsElement,newWsElement);
+							}else{
+							LIST_INSERT_HEAD(&(faulted_env->page_WS_list),newWsElement);
+							}
+							//newWsElement = wsElement;//mesh mot2akdeen 7atenah mkan el victim
+							if(newWsElement->prev_next_info.le_next!=NULL){
+								faulted_env->page_last_WS_element =LIST_NEXT(newWsElement);
+							}
+							else{
+								faulted_env->page_last_WS_element=LIST_FIRST(&(faulted_env->page_WS_list));
+							}
+							//env_page_ws_print(faulted_env);
+							 release_sleeplock(&Myfaultlock);
+								return;
+
+					 }
+				}
+			}
+		}
+						if(faulted_env->page_last_WS_element->prev_next_info.le_next==NULL){
+							faulted_env->page_last_WS_element=LIST_FIRST(&faulted_env->page_WS_list);
+							//cprintf("Pointer at the head \n");
+						}
+						else{
+							faulted_env->page_last_WS_element = LIST_NEXT(faulted_env->page_last_WS_element);
+							//cprintf("Pointer Plus Plus \n");
+						}
+				}
+
+	   }
+		 release_sleeplock(&Myfaultlock);
 	}
-}
+
+
 
 void __page_fault_handler_with_buffering(struct Env * curenv, uint32 fault_va)
 {

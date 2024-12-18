@@ -6,9 +6,11 @@ void
 _main(void)
 {
 	int envID = sys_getenvid();
-
+	cprintf("before create 1 \n");
 	struct semaphore cs1 = create_semaphore("cs1", 1);
+	cprintf("after create 1 \n");
 	struct semaphore depend1 = create_semaphore("depend1", 0);
+	cprintf("after create 2 \n");
 
 	int id1, id2, id3;
 	id1 = sys_create_env("sem1Slave", (myEnv->page_WS_max_size),(myEnv->SecondListSize), (myEnv->percentage_of_WS_pages_to_be_removed));
