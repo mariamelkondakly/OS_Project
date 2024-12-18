@@ -181,8 +181,9 @@ int createSharedObject(int32 ownerID, char* shareName, uint32 size, uint8 isWrit
 
    //cprintf("\n entered createSharedObject\n \n");
 
-	acquire_sleeplock(&Myshareslock);
+
 	struct Env* myenv = get_cpu_proc(); //The calling environment
+	acquire_sleeplock(&Myshareslock);
 
 	struct Share* found=get_share(ownerID,shareName);
 
@@ -271,9 +272,9 @@ int getSharedObject(int32 ownerID, char* shareName, void* virtual_address)
 	//panic("getSharedObject is not implemented yet");
 	//Your Code is Here...
 
-	 acquire_sleeplock(&Myshareslock);
-	    struct Env* myenv = get_cpu_proc(); //The calling environment
 
+	    struct Env* myenv = get_cpu_proc(); //The calling environment
+	    acquire_sleeplock(&Myshareslock);
 	    //cprintf("before the lock! \n");
 
 

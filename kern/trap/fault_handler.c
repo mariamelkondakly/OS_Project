@@ -238,7 +238,7 @@ void page_fault_handler(struct Env * faulted_env, uint32 fault_va)
 		int iWS =faulted_env->page_last_WS_index;
 		uint32 wsSize = env_page_ws_get_size(faulted_env);
 #endif
-
+		acquire_sleeplock(&Myfaultlock);
 		if(wsSize < (faulted_env->page_WS_max_size))
 		{
 		  //cprintf("PLACEMENT=========================WS Size = %d\n", wsSize );
@@ -246,19 +246,21 @@ void page_fault_handler(struct Env * faulted_env, uint32 fault_va)
 		  // Write your code here, remove the panic and write your code
 		  //panic("page_fault_handler().PLACEMENT is not implemented yet...!!");
 
-		  //cprintf("da5al placement \n");
+		  cprintf("entered placement \n");
 
 		  // Allocating and Mapping
 	      struct FrameInfo *frame=NULL;
 		  int alloc_ret = allocate_frame(&frame);
 		  if (alloc_ret == E_NO_MEM){
 		     cprintf("NO MEMORY ....");
+		     release_sleeplock(&Myfaultlock);
 		     return;
 		  }
 		  int map_ret = map_frame(faulted_env->env_page_directory,frame,fault_va,PERM_PRESENT|PERM_WRITEABLE| PERM_USER);
 		  if (map_ret == E_NO_MEM){
 			 free_frame(frame);
 		     cprintf("NO MEMORY ....");
+		     release_sleeplock(&Myfaultlock);
 			 return;
 		}
 		  //checking if it exists in disk
@@ -278,12 +280,14 @@ void page_fault_handler(struct Env * faulted_env, uint32 fault_va)
 				else{
 					faulted_env->page_last_WS_element=LIST_FIRST(&(faulted_env->page_WS_list));
 				}
+				 release_sleeplock(&Myfaultlock);
 				return;
 			}
 			else{//not heap or stack
 				unmap_frame(faulted_env->env_page_directory,fault_va);
 				//free_frame(frame);
 				cprintf("baraaa 3shan mesh stack aw heap env %d \n", get_cpu_proc()->env_id);
+				 release_sleeplock(&Myfaultlock);
 				env_exit();
 			}
 
@@ -299,7 +303,7 @@ void page_fault_handler(struct Env * faulted_env, uint32 fault_va)
 							// Write your code here, remove the panic and write your code
 							//panic("page_fault_handler() Replacement is not implemented yet...!!");
 
-			                //cprintf("entered Replacement\n");
+			                cprintf("entered Replacement\n");
 
 							//struct WorkingSetElement *wsElement = faulted_env->page_last_WS_element;
 							struct WorkingSetElement *newWsElement;
@@ -309,12 +313,14 @@ void page_fault_handler(struct Env * faulted_env, uint32 fault_va)
 									  int alloc_ret = allocate_frame(&frame);
 									  if (alloc_ret == E_NO_MEM){
 									     cprintf("NO MEMORY ....");
+									     release_sleeplock(&Myfaultlock);
 									     return;
 									  }
 									  int map_ret = map_frame(faulted_env->env_page_directory,frame,fault_va,PERM_PRESENT|PERM_WRITEABLE| PERM_USER|PERM_USED|0x400);
 									  if (map_ret == E_NO_MEM){
 										 free_frame(frame);
 									     cprintf("NO MEMORY ....");
+									     release_sleeplock(&Myfaultlock);
 										 return;
 									}
 
@@ -365,6 +371,7 @@ void page_fault_handler(struct Env * faulted_env, uint32 fault_va)
 							faulted_env->page_last_WS_element=LIST_FIRST(&(faulted_env->page_WS_list));
 							}
 							//env_page_ws_print(faulted_env);
+							 release_sleeplock(&Myfaultlock);
 							return;
 						 }
 						 else if (page_perm & PERM_MODIFIED){
@@ -398,6 +405,7 @@ void page_fault_handler(struct Env * faulted_env, uint32 fault_va)
 						 		faulted_env->page_last_WS_element=LIST_FIRST(&(faulted_env->page_WS_list));
 						 	}
 						 	//env_page_ws_print(faulted_env);
+						 	 release_sleeplock(&Myfaultlock);
 						 	return;
 
 						}
@@ -436,6 +444,7 @@ void page_fault_handler(struct Env * faulted_env, uint32 fault_va)
 								faulted_env->page_last_WS_element=LIST_FIRST(&(faulted_env->page_WS_list));
 								}
 							//env_page_ws_print(faulted_env);
+							 release_sleeplock(&Myfaultlock);
 								return;
 					  }
 				}
@@ -471,6 +480,7 @@ void page_fault_handler(struct Env * faulted_env, uint32 fault_va)
 								faulted_env->page_last_WS_element=LIST_FIRST(&(faulted_env->page_WS_list));
 							}
 							//env_page_ws_print(faulted_env);
+							 release_sleeplock(&Myfaultlock);
 								return;
 
 					 }
@@ -488,6 +498,7 @@ void page_fault_handler(struct Env * faulted_env, uint32 fault_va)
 				}
 
 	   }
+		 release_sleeplock(&Myfaultlock);
 	}
 
 

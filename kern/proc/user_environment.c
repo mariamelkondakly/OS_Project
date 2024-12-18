@@ -862,8 +862,7 @@ uint32 __cur_k_stk = KERNEL_HEAP_START;
 //===========================================================
 // 5) ALLOCATE SPACE FOR USER KERNEL STACK (One Per Process):
 //===========================================================
-#include<kern/conc/sleeplock.h>
-struct sleeplock Myfaultlock;
+
 void* create_user_kern_stack(uint32* ptr_user_page_directory)
 {
 #if USE_KHEAP
@@ -876,6 +875,7 @@ void* create_user_kern_stack(uint32* ptr_user_page_directory)
 		// Write your code here, remove the panic and write your code
 		//panic("create_user_kern_stack() is not implemented yet...!!");
 
+	init_sleeplock(&Myfaultlock,"fault lock");
 				uint32 *stack_top;
 				int noOfPages = KERNEL_STACK_SIZE/PAGE_SIZE;
 			   void *ret = kmalloc(KERNEL_STACK_SIZE);
