@@ -257,13 +257,14 @@ void* sget(int32 ownerEnvID, char *sharedVarName){
 	// Write your code here, remove the panic and write your code
 	//panic("sget() is not implemented yet...!!");
 
-	//cprintf("entered sget! \n");
-	//cprintf("ownerEnvId: %d, sharedVarName: %s \n", ownerEnvID, sharedVarName);
+//	cprintf("entered sget! \n");
+//	cprintf("ownerEnvId: %d, sharedVarName: %s \n", ownerEnvID, sharedVarName);
 	int size= sys_getSizeOfSharedObject(ownerEnvID,sharedVarName);
 	if(size==E_SHARED_MEM_NOT_EXISTS){
-		//cprintf("sget exited at E_SHARED_MEM_NOT_EXISTS \n");
+		cprintf("sget exited at E_SHARED_MEM_NOT_EXISTS \n");
 		return NULL;
 	}
+
 	uint32 first_va_found = USER_HEAP_START + DYN_ALLOC_MAX_SIZE + PAGE_SIZE; //UHS + 32MB + 4KB
 	//cprintf("set the first_va_found first place %d \n", first_va_found);
 	    int numOfPagesNeeded = ROUNDUP(size, PAGE_SIZE) / PAGE_SIZE;

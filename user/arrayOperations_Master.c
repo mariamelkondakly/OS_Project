@@ -148,16 +148,19 @@ _main(void)
 
 uint32 CheckSorted(int *Elements, int NumOfElements)
 {
+	cprintf("Entered CheckSorted: \n");
 	uint32 Sorted = 1 ;
 	int i ;
 	for (i = 0 ; i < NumOfElements - 1; i++)
 	{
+		cprintf("%d\n",Elements[i]);
 		if (Elements[i] > Elements[i+1])
 		{
 			Sorted = 0 ;
 			break;
 		}
 	}
+	cprintf("\n\n");
 	return Sorted ;
 }
 

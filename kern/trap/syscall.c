@@ -372,11 +372,11 @@ void sys_init_queue(struct Env_Queue* queue)
 }
 void sys_enqueue(struct __semdata* sem){
 
-	acquire_spinlock(&ProcessQueues.qlock);
 	sem->lock=0;
 	struct Env *current_process = get_cpu_proc();
 	enqueue(&sem->queue,current_process);
 	current_process->env_status=ENV_BLOCKED;
+	acquire_spinlock(&ProcessQueues.qlock);
 	sched();
 	release_spinlock(&ProcessQueues.qlock);
 	return;
@@ -389,9 +389,9 @@ void sys_sched(void){
 }
 struct Env* sys_dequeue(struct Env_Queue* queue)
 {
-	acquire_spinlock(&ProcessQueues.qlock);
 	struct Env* env = dequeue(queue);
 	env->env_status=ENV_READY;
+	acquire_spinlock(&ProcessQueues.qlock);
 	sched_insert_ready(env);
 	release_spinlock(&ProcessQueues.qlock);
 	return env;

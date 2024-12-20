@@ -55,8 +55,11 @@ void wait_semaphore(struct semaphore sem)
 	//cprintf("entered wait \n");
 //	cprintf("lock value is %d \n ",sem.semdata->lock);
 //	cprintf("name value is %d \n ",sem.semdata->name);
-//	uint32 key =1;
-	while(xchg(&(sem.semdata->lock), 1) != 0);
+	uint32 key = 1;
+	do {
+		key = xchg( &sem.semdata->lock, key);
+	} while (key != 0);
+//	while(xchg(&(sem.semdata->lock), 1) != 0);
 	sem.semdata->count--;
 	if(sem.semdata->count<0){
 		sys_enqueue(sem.semdata);
@@ -81,16 +84,22 @@ void signal_semaphore(struct semaphore sem)
 	//COMMENT THE FOLLOWING LINE BEFORE START CODING
 	//panic("signal_semaphore is not implemented yet");
 	//Your Code is Here...
-	//cprintf("entered signal \n");
-	while(xchg(&sem.semdata->lock, 1) != 0);
+	cprintf("entered signal: \n");
+	uint32 key = 1;
+	do {
+		key = xchg( &sem.semdata->lock, key);
+	} while (key != 0);
+
+//	while(xchg(&sem.semdata->lock, 1) != 0);
 	sem.semdata->count++;
 	if(sem.semdata->count<=0){
-		if(sys_queue_size(&sem.semdata->queue)==0)
-		{
-		struct Env* process= sys_dequeue(&sem.semdata->queue);
+//		if(sys_queue_size(&sem.semdata->queue)==0)
+//		{
+			sys_dequeue(&sem.semdata->queue);
+//		struct Env* process= sys_dequeue(&sem.semdata->queue);
 //		process->env_status=1;
 		//sys_sched_insert_ready(process);
-		}
+//		}
 	}
 	sem.semdata->lock=0;
 }
