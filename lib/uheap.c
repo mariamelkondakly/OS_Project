@@ -342,34 +342,29 @@ void sfree(void* virtual_address)
 	int32 ID;
 	uint32 size =0;
 	bool found=0;
+	int index=0;
 	for(int i=0;i<USER_HEAP_MAX_PAGES;i++){
 //			cprintf("this is the current va in the array at %d : %x \n", i, sharedBundles[i].VA);
 			found=(uint32)sharedBundles[i].VA==(uint32)virtual_address;
 			if(found){
 				ID=sharedBundles[i].ID;
 				size = sharedBundles[i].size;
+				index=i;
 				break;
 			}
 		}
 		if(found){
-			markAddressAsFree((uint32)virtual_address,ROUNDUP(size,PAGE_SIZE)/PAGE_SIZE);
 //			cprintf("found the shared object, va: %x id: %x \n", virtual_address, ID);
 			sys_freeSharedObject(ID,virtual_address);
 //			cprintf("returned from freeSharedObject \n");
-			for(int i=0;i<=USER_HEAP_MAX_PAGES;i++){
+			markAddressAsFree((uint32)virtual_address,ROUNDUP(size,PAGE_SIZE)/PAGE_SIZE);
+//			for(int i=0;i<=USER_HEAP_MAX_PAGES;i++){
 //				cprintf("looking for the deleted object \n");
-				if((uint32)sharedBundles[i].VA==(uint32)virtual_address){
-//					cprintf("successfully found the object \n");
 
-					sharedBundles[i].ID=0;
-					sharedBundles[i].VA=NULL;
-					sharedBundles[i].size=0;
-					break;
-				}
+			sharedBundles[index].ID=0;
+			sharedBundles[index].VA=NULL;
+			sharedBundles[index].size=0;
 			}
-
-			}
-
 		}
 //=================================
 // REALLOC USER SPACE:

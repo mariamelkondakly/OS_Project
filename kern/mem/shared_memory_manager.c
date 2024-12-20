@@ -326,10 +326,12 @@ void free_share(struct Share* ptrShare)
 	LIST_REMOVE(&AllShares.shares_list, ptrShare);
 	int index=0;
 //	while(index<(ROUNDUP(ptrShare->size,PAGE_SIZE)/PAGE_SIZE)){
-//			free_frame(ptrShare->framesStorage[index]);
+//			kfree(ptrShare->framesStorage[index]);
+//			cprintf("deletedddd \n");
 //			index++;
 //	}
-	index=0;
+//	index=0;
+
 	while(index<(ROUNDUP(ptrShare->size,PAGE_SIZE)/PAGE_SIZE)){
 		ptrShare->framesStorage[index]=NULL;
 		index++;
@@ -383,7 +385,7 @@ int freeSharedObject(int32 sharedObjectID, void *startVA)
 		return E_NO_SHARE;
 	}
 	current->references--;
-
+//	cprintf("no of references %d \n", current->references);
 	if(current->references==0){
 		uint32 *ptr_page_table =NULL;
 		struct FrameInfo* ptr =NULL;
@@ -403,6 +405,7 @@ int freeSharedObject(int32 sharedObjectID, void *startVA)
 
 //			cprintf("startVA: %x , page table pointer: %x \n",i, ptr_page_table);
 			if(ptr!= NULL){
+				free_frame(ptr);
 				unmap_frame(myenv->env_page_directory, i);
 			}
 
@@ -421,11 +424,26 @@ int freeSharedObject(int32 sharedObjectID, void *startVA)
 
 	}
 	else{
+		struct FrameInfo* ptr =NULL;
+		uint32 *ptr_page_table =NULL;
+
 //		cprintf("no of refs to shared object: %d \n", current->references);
+
 		for (uint32 i = (uint32)startVA; i < ((uint32)startVA+ROUNDUP(current->size, PAGE_SIZE)); i += PAGE_SIZE) {
-//			cprintf("unmapped here!\n");
+			ptr =get_frame_info(myenv->env_page_directory, (uint32)i, &ptr_page_table);
+
 			unmap_frame(myenv->env_page_directory, i);
+
+			if(!isTableUsed(ptr_page_table)){ //delete page table
+				if(ptr_page_table!=NULL&&ptr_page_table!=0){
+//					cprintf("PAGE TABLE DELETED HERE! \n");
+					pd_clear_page_dir_entry(myenv->env_page_directory,(uint32)i);
+
+					unmap_frame(myenv->env_page_directory,(uint32) ptr_page_table);
+				}
+			}
 		}
+
 
 	}
 	//tlb_invalidate(myenv->env_page_directory,(uint32)startVA);

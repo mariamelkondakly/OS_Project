@@ -35,6 +35,7 @@ sys_lock_cons();
 	diff = (sys_calculate_free_frames() - freeFrames);
 sys_unlock_cons();
 	expected = 1;
+	cprintf("here is the reality of the free frames now minus after the free frames after sget %d this is before %d, this is after %d \n  \n",diff, freeFrames, sys_calculate_free_frames() );
 	if (diff != expected) panic("wrong free: frames removed not equal 1 !, correct frames to be removed is 1:\nfrom the env: 1 table for x\nframes_storage: not cleared yet\n");
 
 	//to ensure that this environment is completed successfully
