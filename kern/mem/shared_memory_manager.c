@@ -343,9 +343,7 @@ void free_share(struct Share* ptrShare)
 	//COMMENT THE FOLLOWING LINE BEFORE START CODING
 	//panic("free_share is not implemented yet");
 	//Your Code is Here...
-	acquire_spinlock(&AllShares.shareslock);
 	LIST_REMOVE(&AllShares.shares_list, ptrShare);
-	release_spinlock(&AllShares.shareslock);
 	int index=0;
 //	while(index<(ROUNDUP(ptrShare->size,PAGE_SIZE)/PAGE_SIZE)){
 //			free_frame(ptrShare->framesStorage[index]);
@@ -390,7 +388,6 @@ int freeSharedObject(int32 sharedObjectID, void *startVA)
 	//Your Code is Here...
 	struct Env* myenv = get_cpu_proc(); //The calling environment
 //	cprintf("the startVA: %x \n", startVA);
-	//acquire_spinlock(&Myshareslock);
     acquire_spinlock(&AllShares.shareslock);
 	struct Share* current;
 	bool found=0;
@@ -403,7 +400,6 @@ int freeSharedObject(int32 sharedObjectID, void *startVA)
 	}
 
 	if(!found){
-		//release_spinlock(&Myshareslock);
 		return E_NO_SHARE;
 	}
 	current->references--;
@@ -456,7 +452,7 @@ int freeSharedObject(int32 sharedObjectID, void *startVA)
 
 	tlbflush();
     release_spinlock(&AllShares.shareslock);
-   // release_spinlock(&Myshareslock);
+
 
 	return 0;
 
