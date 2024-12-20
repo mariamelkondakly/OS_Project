@@ -13,11 +13,6 @@
 #include "kheap.h"
 #include "memory_manager.h"
 
-
-
-
-#include<kern/conc/sleeplock.h>
-// edited lala
 //==================================================================================//
 //============================== GIVEN FUNCTIONS ===================================//
 //==================================================================================//
@@ -27,16 +22,11 @@ struct Share* get_share(int32 ownerID, char* name);
 // [1] INITIALIZE SHARES:
 //===========================
 //Initialize the list and the corresponding lock
-// Made lock
-	struct sleeplock Myshareslock;
 void sharing_init()
 {
 #if USE_KHEAP
 	LIST_INIT(&AllShares.shares_list) ;
 	init_spinlock(&AllShares.shareslock, "shares lock");
-
-	init_sleeplock(&Myshareslock, "My shares lock");
-
 #else
 	panic("not handled when KERN HEAP is disabled");
 #endif
@@ -52,6 +42,7 @@ int getSizeOfSharedObject(int32 ownerID, char* shareName)
 	// RETURN:
 	//	a) If found, return size of shared object
 	//	b) Else, return E_SHARED_MEM_NOT_EXISTS
+	//
 	struct Share* ptr_share = get_share(ownerID, shareName);
 	if (ptr_share == NULL)
 		return E_SHARED_MEM_NOT_EXISTS;
@@ -146,10 +137,9 @@ struct Share* get_share(int32 ownerID, char* name)
 	//COMMENT THE FOLLOWING LINE BEFORE START CODING
 	//panic("get_share is not implemented yet");
 	//Your Code is Here...
-	acquire_spinlock(&AllShares.shareslock);
+
 	struct Share* current;
 	int i=1;
-
 	LIST_FOREACH(current,&(AllShares.shares_list)){
 
     //cprintf("%d share's name: %s, share's ownerId: %d \n", i,current->name,current->ownerID);
@@ -160,11 +150,9 @@ struct Share* get_share(int32 ownerID, char* name)
 
 		if(isFound){
      //cprintf("current: %d \n", (uint32)current);
-			release_spinlock(&AllShares.shareslock);
 			return current;
 		}
 	}
-	release_spinlock(&AllShares.shareslock);
 	return NULL;
 
 }
@@ -181,23 +169,20 @@ int createSharedObject(int32 ownerID, char* shareName, uint32 size, uint8 isWrit
 
    //cprintf("\n entered createSharedObject\n \n");
 
-
 	struct Env* myenv = get_cpu_proc(); //The calling environment
-	acquire_sleeplock(&Myshareslock);
-
+	acquire_spinlock(&AllShares.shareslock);
 	struct Share* found=get_share(ownerID,shareName);
-
+	release_spinlock(&AllShares.shareslock);
 
 	if(found!=NULL){
     //cprintf("exited createSharedObject with the shared memory already exists \n");
-		release_sleeplock(&Myshareslock);
+
 		return E_SHARED_MEM_EXISTS;
 	}
 	struct Share* sharedObject= create_share(ownerID, shareName,size,isWritable);
 
 	if(!sharedObject){
     //cprintf("exited createSharedObject at no memory to create shared object\n");
-		release_sleeplock(&Myshareslock);
 		return E_NO_SHARE;
 	}
 
@@ -215,7 +200,6 @@ int createSharedObject(int32 ownerID, char* shareName, uint32 size, uint8 isWrit
 				unmap_frame(myenv->env_page_directory, k);
 				free_frame(get_frame_info(myenv->env_page_directory, k, NULL));
 			}
-			release_sleeplock(&Myshareslock);
 
 		return E_NO_SHARE;
 		}
@@ -233,10 +217,9 @@ int createSharedObject(int32 ownerID, char* shareName, uint32 size, uint8 isWrit
 				unmap_frame(myenv->env_page_directory, k);
 				free_frame(get_frame_info(myenv->env_page_directory, k, NULL));
 			}
-			release_sleeplock(&Myshareslock);
+
 			return E_NO_SHARE;
 		}
-
 //		uint32 pd_used;
 //		pd_used =pd_is_table_used(myenv->env_page_directory,(uint32)i);
 //		cprintf("is page table used after allocation? %d \n", pd_used);
@@ -253,9 +236,8 @@ int createSharedObject(int32 ownerID, char* shareName, uint32 size, uint8 isWrit
     //cprintf("exited createSharedObject normally\n");
     //((uint32*)virtual_address)[0]=-1;
     //cprintf("trial 1: %d \n", ((uint32*)virtual_address)[0]);
-	int32 id =sharedObject->ID;
-	release_sleeplock(&Myshareslock);
-	return id;
+
+	return sharedObject->ID;
 
 }
 
@@ -272,20 +254,20 @@ int getSharedObject(int32 ownerID, char* shareName, void* virtual_address)
 	//panic("getSharedObject is not implemented yet");
 	//Your Code is Here...
 
-
 	    struct Env* myenv = get_cpu_proc(); //The calling environment
-	    acquire_sleeplock(&Myshareslock);
+
 	    //cprintf("before the lock! \n");
 
-
+	    acquire_spinlock(&AllShares.shareslock);
 	    struct Share* x= get_share(ownerID,shareName);
+		release_spinlock(&AllShares.shareslock);
 		//cprintf("after the lock! share found at: %d \n",(uint32) x);
 
 
 
 			if(x==NULL){
 				//cprintf("exited with the share not found \n");
-				release_sleeplock(&Myshareslock);
+
 					return E_NO_SHARE ;
 				}
 			struct FrameInfo** frames =x->framesStorage;
@@ -311,7 +293,7 @@ int getSharedObject(int32 ownerID, char* shareName, void* virtual_address)
 
 	    				 }
 	    				//cprintf("exited with no memory found for mapping\n");
-	    				 release_sleeplock(&Myshareslock);
+
 	    				return E_NO_MEM;
 	    					}
 
@@ -323,9 +305,7 @@ int getSharedObject(int32 ownerID, char* shareName, void* virtual_address)
 
 	     x->references++;
 	     //cprintf("EXITING GETSHAREDOBJECT NORMALLY!\n");
-	     int32 id = x->ID;
-	     release_sleeplock(&Myshareslock);
-		 return id;
+		 return x->ID;
 }
 
 //==================================================================================//
