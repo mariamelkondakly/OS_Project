@@ -372,7 +372,7 @@ void sys_init_queue(struct Env_Queue* queue)
 }
 void sys_enqueue(struct __semdata* sem){
 
-	sem->lock=0;
+//	sem->lock=0;
 	struct Env *current_process = get_cpu_proc();
 	enqueue(&sem->queue,current_process);
 	current_process->env_status=ENV_BLOCKED;

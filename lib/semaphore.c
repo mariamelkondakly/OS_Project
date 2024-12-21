@@ -62,6 +62,7 @@ void wait_semaphore(struct semaphore sem)
 //	while(xchg(&(sem.semdata->lock), 1) != 0);
 	sem.semdata->count--;
 	if(sem.semdata->count<0){
+		sem.semdata->lock=0;
 		sys_enqueue(sem.semdata);
 //		if(curr!= NULL){
 //		curr->env_status=ENV_BLOCKED;

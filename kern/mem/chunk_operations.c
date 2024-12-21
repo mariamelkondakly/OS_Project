@@ -234,38 +234,53 @@ void free_user_mem(struct Env* e, uint32 virtual_address, uint32 size)
 	/*====================================*/
 
 	//TODO: [PROJECT'24.MS2 - #15] [3] USER HEAP [KERNEL SIDE] - free_user_mem
-	// Write your code here, remove the panic and write your code
-    //panic("free_user_mem() is not implemented yet...!!");
+		// Write your code here, remove the panic and write your code
+	    //panic("free_user_mem() is not implemented yet...!!");
 
 
-	if( virtual_address >= USER_HEAP_START && virtual_address < USER_HEAP_MAX ){
+		if( virtual_address >= USER_HEAP_START && virtual_address < USER_HEAP_MAX ){
 
-		uint32 nopages = ROUNDUP(size, PAGE_SIZE) / PAGE_SIZE ;
+			uint32 nopages = ROUNDUP(size, PAGE_SIZE) / PAGE_SIZE ;
 
-		for (uint32 i=0; i< nopages ;i++){
+			for (uint32 i=0; i< nopages ;i++){
 
-			uint32* pageTable = NULL;
-			int tableExist = get_page_table(e->env_page_directory,virtual_address+i*PAGE_SIZE,&pageTable);
+				uint32* pageTable = NULL;
+				int tableExist = get_page_table(e->env_page_directory,virtual_address+i*PAGE_SIZE,&pageTable);
 
-			if(pageTable != NULL){
-				pt_set_page_permissions(e->env_page_directory, virtual_address+i*PAGE_SIZE,0 ,0x400);
+				if(pageTable != NULL){
+					pt_set_page_permissions(e->env_page_directory, virtual_address+i*PAGE_SIZE,0 ,0x400);
 
-				// free all pages from page file
-				pf_remove_env_page(e, virtual_address+i*PAGE_SIZE);
+					// free all pages from page file
+					pf_remove_env_page(e, virtual_address+i*PAGE_SIZE);
 
-				// free from working set: Flush certain Virtual Address from Working Set
-				// Search for the given virtual address inside the working set of “e” and, if found, removes its entry.
-				env_page_ws_invalidate(e, virtual_address+i*PAGE_SIZE);
+					// free from working set: Flush certain Virtual Address from Working Set
+					// Search for the given virtual address inside the working set of “e” and, if found, removes its entry.
+					env_page_ws_invalidate(e, virtual_address+i*PAGE_SIZE);
 
+				}
 			}
-		}
-	}
-	else{
-		// terminate
-		return;
-	}
 
-	//TODO: [PROJECT'24.MS2 - BONUS#3] [3] USER HEAP [KERNEL SIDE] - O(1) free_user_mem
+			//To keep the FIFO order
+			 if (LIST_SIZE(&e->page_WS_list)!=0 && e->page_last_WS_element != NULL)
+	        {
+
+				struct WorkingSetElement *i=LIST_FIRST(&e->page_WS_list);
+				struct WorkingSetElement *Next_WS;
+				while(i!=e->page_last_WS_element){
+					Next_WS=i->prev_next_info.le_next;
+					LIST_REMOVE(&(e->page_WS_list),i);
+					LIST_INSERT_TAIL(&(e->page_WS_list),i);
+					i=Next_WS;
+				}
+	        }
+			 e->page_last_WS_element=NULL;
+		}
+		else{
+			// terminate
+			return;
+		}
+
+		//TODO: [PROJECT'24.MS2 - BONUS#3] [3] USER HEAP [KERNEL SIDE] - O(1) free_user_mem
 }
 
 //=====================================
