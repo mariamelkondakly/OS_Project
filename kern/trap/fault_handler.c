@@ -246,7 +246,7 @@ void page_fault_handler(struct Env * faulted_env, uint32 fault_va)
 		  // Write your code here, remove the panic and write your code
 		  //panic("page_fault_handler().PLACEMENT is not implemented yet...!!");
 
-		  cprintf("entered placement \n");
+		  //cprintf("entered placement \n");
 
 		  // Allocating and Mapping
 	      struct FrameInfo *frame=NULL;
@@ -303,7 +303,7 @@ void page_fault_handler(struct Env * faulted_env, uint32 fault_va)
 							// Write your code here, remove the panic and write your code
 							//panic("page_fault_handler() Replacement is not implemented yet...!!");
 
-			                cprintf("entered Replacement\n");
+			                //cprintf("entered Replacement\n");
 
 							//struct WorkingSetElement *wsElement = faulted_env->page_last_WS_element;
 							struct WorkingSetElement *newWsElement;

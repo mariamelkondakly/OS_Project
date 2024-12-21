@@ -16,7 +16,7 @@
 
 void init_spinlock(struct spinlock *lk, char *name)
 {
-	cprintf("init %s \n",name);
+	//cprintf("init %s \n",name);
 	strcpy(lk->name, name);
 	lk->locked = 0;
 	lk->cpu = 0;

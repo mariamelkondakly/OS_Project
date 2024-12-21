@@ -463,13 +463,22 @@ void env_start(void)
 void env_free(struct Env *e)
 {
 	/*REMOVE THIS LINE BEFORE START CODING*/
-	return;
+	//return;
 	/**************************************/
 
 	//[PROJECT'24.MS3] BONUS [EXIT ENV] env_free
 	// your code is here, remove the panic and write your code
-	panic("env_free() is not implemented yet...!!");
-
+	//panic("env_free() is not implemented yet...!!");
+	struct WorkingSetElement *x=LIST_FIRST(&e->page_WS_list);
+	struct WorkingSetElement *NEXT;
+	while(LIST_SIZE(&e->page_WS_list)!=0){
+	NEXT=x->prev_next_info.le_next;
+	env_page_ws_invalidate(e,x->virtual_address);
+	pt_clear_page_table_entry(e->env_page_directory,x->virtual_address);
+	pd_clear_page_dir_entry(e->env_page_directory,x->virtual_address);
+	x=NEXT;
+	}
+	delete_user_kern_stack(e);
 
 	// [9] remove this program from the page file
 	/*(ALREADY DONE for you)*/
@@ -912,10 +921,25 @@ void delete_user_kern_stack(struct Env* e)
 #if USE_KHEAP
 	//[PROJECT'24.MS3] BONUS
 	// Write your code here, remove the panic and write your code
-	panic("delete_user_kern_stack() is not implemented yet...!!");
+	//panic("delete_user_kern_stack() is not implemented yet...!!");
 
 	//Delete the allocated space for the user kernel stack of this process "e"
 	//remember to delete the bottom GUARD PAGE (i.e. not mapped)
+
+	    if (e == NULL)
+	    {
+	        return;
+	    }
+	        void* stack_bottom = e->kstack;
+	        if (stack_bottom == NULL)
+	        {
+	         return;
+	        }
+	        void* stack_top = (void*)((uint32)stack_bottom + KERNEL_STACK_SIZE);
+	        kfree(stack_top);
+	        e->kstack = NULL;
+
+
 #else
 	panic("KERNEL HEAP is OFF! user kernel stack can't be deleted");
 #endif
